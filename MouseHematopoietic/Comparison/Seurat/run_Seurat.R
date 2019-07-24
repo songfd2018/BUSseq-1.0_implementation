@@ -8,8 +8,8 @@ set.seed(123)
 
 
 # Working directory
-#setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/MouseHematopoietic/Comparison/Seurat")
-setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/MouseHematopoietic/Comparison/Seurat")
+setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/MouseHematopoietic/Comparison/Seurat")
+#setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/MouseHematopoietic/Comparison/Seurat")
 
 ###################
 # Load hemat Data #
@@ -23,20 +23,19 @@ G <- dim[2]
 B <- dim[3]
 nb <- dim[3 + 1:B]
 
-metadata <- read.table("../../RawCountData/hemat_metadata.txt")
+# Load metadata
+metadata <- read.table("../../RawCountData/metadata_hemat_v1.txt")
+rownames(metadata) <- paste0("Batch_",rep(c(1,2),nb),"_Cell_",c(1:nb[1],1:nb[2]))
+gene_list <- unlist(read.table("../../RawCountData/gene_list_hemat_v1.txt",stringsAsFactors = FALSE))
 
-load("../../RawCountData/hemat_countdata.RData")
-gene_list <- rownames(dataA2)
+colnames(countdata) <- paste0("Batch_",rep(c(1,2),nb),"_Cell_",c(1:nb[1],1:nb[2]))
+rownames(countdata) <- gene_list
 
 ##########################################
 # Apply Seurat to the Hematopoietic Data #
 ##########################################
 # Referrring to https://satijalab.org/seurat/v3.0/pancreas_integration_label_transfer.html
 # Setting the Seurat Object 
-colnames(countdata) <- paste0("Batch_",rep(c(1,2),nb),"_Cell_",c(1:nb[1],1:nb[2]))
-rownames(countdata) <- gene_list
-rownames(metadata) <- paste0("Batch_",rep(c(1,2),nb),"_Cell_",c(1:nb[1],1:nb[2]))
-
 hemat <- CreateSeuratObject(countdata, meta.data = metadata)
 hemat.list <- SplitObject(hemat, split.by = "Study")
 
@@ -72,14 +71,6 @@ for(g in 1:G){
 # ARI #
 #######
 ARI_Seurat <- adjustedRandIndex(metadata$CellType,w_Seurat)
-
-#######################################################################
-# Silhouette coefficient by estimated cell type labels of each method #
-#######################################################################
-# Silhouette coefficients of the top 30 PCs inferred by Seurat
-Seurat_dist <- dist(Seurat_PCA)
-sil_Seurat <- silhouette(as.integer(w_Seurat), dist = Seurat_dist)
-sil_Seurat_true <- silhouette(as.integer(metadata$CellType), dist = Seurat_dist)
 
 #################################
 # scatter plots (t-SNE and PCA) #
@@ -130,6 +121,7 @@ plot_by_batch<-function(pic_name,Y,subset=NULL,...,xlab = "tSNE 1", ylab = "tSNE
 # Draw t-SNE plots by batch and true cell types #
 #################################################
 set.seed(123)
+Seurat_dist <- dist(Seurat_PCA)
 all.dists.Seurat <- as.matrix(Seurat_dist)
 tsne_Seurat_dist <- Rtsne(all.dists.Seurat, is_distance=TRUE, perplexity = 30)
 

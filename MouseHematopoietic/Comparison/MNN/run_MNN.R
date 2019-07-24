@@ -11,23 +11,35 @@ library(cluster) # For Silhouette
 library(Rtsne) # For t-SNE plot
 
 set.seed(123)
+# Working directory
+setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/MouseHematopoietic/Comparison/MNN")
+#setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/MouseHematopoietic/Comparison/MNN")
 
 ###################
 # Load hemat Data #
 ###################
-# Working directory
-#setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/MouseHematopoietic/Comparison/MNN")
-setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/MouseHematopoietic/Comparison/MNN")
+# Loading the file name list of all hemat count data
+countdata <- read.table("../../RawCountData/count_data_hemat_v1.txt") 
 
-# Loading hematopoietic count data
-load("../../RawCountData/hemat_countdata.RData")
-HematCounts <- list(GSE72857 = dataA2,
-                    GSE81682 = dataF2)
-B <- 2
-nb <- c(ncol(dataA2), ncol(dataF2))
+dim <- unlist(read.table("../../RawCountData/dim_hemat_v1.txt"))
+N <- dim[1]
+G <- dim[2]
+B <- dim[3]
+nb <- dim[3 + 1:B]
 
 # Load metadata
-metadata <- read.table("../../RawCountData/hemat_metadata.txt")
+metadata <- read.table("../../RawCountData/metadata_hemat_v1.txt")
+gene_list <- unlist(read.table("../../RawCountData/gene_list_hemat_v1.txt",stringsAsFactors = FALSE))
+
+colnames(countdata) <- rownames(metadata)
+rownames(countdata) <- gene_list
+
+HematCounts <- list()
+index <- 0
+for(b in 1:B){
+  HematCounts[[b]] <- as.matrix(countdata[,index + 1:nb[b]])
+  index <- index + nb[b]
+}
 
 #######################################
 # Apply MNN to the Hematopoietic Data #

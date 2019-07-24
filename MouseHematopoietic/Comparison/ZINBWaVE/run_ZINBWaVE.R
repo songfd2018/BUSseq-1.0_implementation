@@ -10,17 +10,23 @@ library(zinbwave)
 library(mclust) # For ARI
 library(cluster) # For Silhouette
 library(Rtsne) # For t-SNE plot
+
+# coloring
+library(scales)
+require(WGCNA)
+library(RColorBrewer)
+
 set.seed(123)
 
 ###########################
 # Load Hematopoietic Data #
 ###########################
 # Working directory
-#setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/MouseHematopoietic/Comparison/ZINBWaVE")
-setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/MouseHematopoietic/Comparison/ZINBWaVE")
+setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/MouseHematopoietic/Comparison/ZINBWaVE")
+#setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/MouseHematopoietic/Comparison/ZINBWaVE")
 
 # Loading hematopoietic count data
-data_ZINBW <- read.table("../../RawCountData/count_data_hemat_v1.txt")
+data_ZINBW <- as.matrix(read.table("../../RawCountData/count_data_hemat_v1.txt"))
 
 # Load dimension
 dim <- read.table("../../RawCountData/dim_hemat_v1.txt")
@@ -30,13 +36,18 @@ G <- dim[2]
 B <- dim[3]
 nb <- dim[3+1:B]
 
-metadata <- read.table("../../RawCountData/hemat_metadata.txt")
+# Load metadata
+metadata <- read.table("../../RawCountData/metadata_hemat_v1.txt")
+rownames(metadata) <- paste0("Batch_",rep(c(1,2),nb),"_Cell_",c(1:nb[1],1:nb[2]))
+gene_list <- unlist(read.table("../../RawCountData/gene_list_hemat_v1.txt",stringsAsFactors = FALSE))
 
+colnames(data_ZINBW) <- paste0("Batch_",rep(c(1,2),nb),"_Cell_",c(1:nb[1],1:nb[2]))
+rownames(data_ZINBW) <- gene_list
 
 #############################################
 # Apply ZINB-WaVE to the Hematopoietic Data #
 #############################################
-colnames(data_ZINBW) <- rep(paste0("Batch_",rep(1:B,nb),"_Cell_",c(1:nb[1],1:nb[2])))
+
 # Factorizing the batch indicators
 batch_ind <- factor(rep(1:B,nb))
 
@@ -70,14 +81,6 @@ w_ZINBWaVE <- seu$seurat_clusters
 # ARI #
 #######
 ARI_ZINBWaVE <- adjustedRandIndex(metadata$CellType,w_ZINBWaVE)
-
-#######################################################################
-# Silhouette coefficient by estimated cell type labels of each method #
-#######################################################################
-# Silhouette coefficients of the 10 components inferred by ZINBWaVE
-ZINBWaVE_dist <- dist(zinb_batch@W)
-sil_ZINBWaVE <- silhouette(as.integer(w_ZINBWaVE), dist = ZINBWaVE_dist)
-sil_ZINBWaVE_true <-silhouette(as.integer(metadata$CellType), dist = ZINBWaVE_dist)
 
 #################################
 # scatter plots (t-SNE and PCA) #
@@ -128,6 +131,7 @@ plot_by_batch<-function(pic_name,Y,subset=NULL,...,xlab = "tSNE 1", ylab = "tSNE
 # Draw t-SNE plots by batch and true cell types #
 #################################################
 set.seed(123)
+ZINBWaVE_dist <- dist(zinb_batch@W)
 all.dists.ZINBW <- as.matrix(ZINBWaVE_dist)
 tsne_ZINBW_dist <- Rtsne(all.dists.ZINBW, is_distance=TRUE, perplexity = 30)
 

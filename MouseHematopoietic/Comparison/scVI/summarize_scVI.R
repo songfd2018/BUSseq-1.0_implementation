@@ -6,8 +6,8 @@ library(Rtsne) # For t-SNE plot
 set.seed(123)
 
 # Working directory
-setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/MouseHematopoietic/Comparison/scVI/")
-
+# setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/MouseHematopoietic/Comparison/scVI/")
+setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/MouseHematopoietic/Comparison/scVI")
 ###################
 # Load hemat Data #
 ###################
@@ -19,7 +19,7 @@ B <- dim[3]
 nb <- dim[1:B + 3]
 
 # Loading the true cell type indicators
-metadata <- read.table("../../RawCountData/hemat_metadata.txt")
+metadata <- read.table("../../RawCountData/metadata_hemat_v1.txt")
 
 ##############################
 # load the inference by scVI #
@@ -31,14 +31,6 @@ scVI_corrected <- read.table("scVI_hemat_v1_latent_0716.txt")
 # ARI #
 #######
 ARI_scVI <- adjustedRandIndex(metadata$CellType, w_scVI)
-
-#######################################################################
-# Silhouette coefficient by estimated cell type labels of each method #
-#######################################################################
-# Silhouette coefficients of the latent variables
-scVI_dist <- dist(scVI_corrected) 
-sil_scVI <- silhouette(as.integer(w_scVI), dist = scVI_dist)
-sil_scVI_true <- silhouette(as.integer(metadata$CellType), dist = scVI_dist)
 
 #################################
 # scatter plots (t-SNE and PCA) #
@@ -89,6 +81,7 @@ plot_by_batch<-function(pic_name,Y,subset=NULL,...,xlab = "tSNE 1", ylab = "tSNE
 # Draw t-SNE plots by batch and true cell types #
 #################################################
 set.seed(123)
+scVI_dist <- dist(scVI_corrected) 
 all.dists.scVI <- as.matrix(scVI_dist)
 tsne_scVI_dist <- Rtsne(all.dists.scVI, is_distance=TRUE, perplexity = 30)
 

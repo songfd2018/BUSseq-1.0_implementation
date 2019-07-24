@@ -21,12 +21,11 @@ N <- dim[1]
 G <- dim[2]
 B <- dim[3]
 nb <- dim[3 + 1:B]
+# Load metadata
+metadata <- read.table("../../RawCountData/metadata_hemat_v1.txt")
 
-metadata <- read.table("../../RawCountData/hemat_metadata.txt")
-
-load("../../RawCountData/hemat_countdata.RData")
-gene_list <- rownames(dataA2)
-
+# Load gene_list
+gene_list <- unlist(read.table("../../RawCountData/gene_list_hemat_v1.txt",stringsAsFactors = FALSE))
 
 rownames(countdata) <- gene_list
 colnames(countdata) <- paste0("Batch",rep(1:2,nb),"_Cell",c(1:nb[1],1:nb[2]))
@@ -61,12 +60,12 @@ print(p1[[1]])
 # loading cells across datasets by building a similarity graph based on shared factor neighborhoods.
 liger_hemat <- quantileAlignSNF(liger_hemat, resolution = 0.4, small.clust.thresh = 20)
 
-liger_hemat <- runTSNE(liger_hemat)
-p_a <- plotByDatasetAndCluster(liger_hemat, return.plots = T)
-# Modify plot output slightly
-p_a[[1]] <- p_a[[1]] + theme_classic() + theme(legend.position = c(0.85, 0.15)) +
-  guides(col=guide_legend(title = '', override.aes = list(size = 4)))
-print(p_a[[1]])
+# liger_hemat <- runTSNE(liger_hemat)
+# p_a <- plotByDatasetAndCluster(liger_hemat, return.plots = T)
+# # Modify plot output slightly
+# p_a[[1]] <- p_a[[1]] + theme_classic() + theme(legend.position = c(0.85, 0.15)) +
+#   guides(col=guide_legend(title = '', override.aes = list(size = 4)))
+# print(p_a[[1]])
 
 # clusters_prior <- readRDS('pbmc_alignment/tenx_seqwell_clusters.RDS')
 # tenx_c <- droplevels(clusters_prior[rownames(a.pbmc@H[[1]])])
@@ -97,15 +96,6 @@ w_liger <- liger_hemat@alignment.clusters
 # ARI #
 #######
 ARI_liger <- adjustedRandIndex(metadata$CellType,w_liger)
-
-
-#######################################################################
-# Silhouette coefficient by estimated cell type labels of each method #
-#######################################################################
-loading_liger <- liger_hemat@H.norm
-liger_dist <- dist(loading_liger)
-sil_liger <- silhouette(as.integer(w_liger), dist = liger_dist)
-sil_liger_true <- silhouette(as.integer(metadata$CellType), dist = liger_dist)
 
 #################################
 # scatter plots (t-SNE and PCA) #
@@ -156,6 +146,8 @@ plot_by_batch<-function(pic_name,Y,subset=NULL,...,xlab = "tSNE 1", ylab = "tSNE
 # Draw t-SNE plots by batch and true cell types #
 #################################################
 set.seed(123)
+loading_liger <- liger_hemat@H.norm
+liger_dist <- dist(loading_liger)
 all.dists.liger <- as.matrix(liger_dist)
 tsne_liger_dist <- Rtsne(all.dists.liger, is_distance=TRUE, perplexity = 30)
 
