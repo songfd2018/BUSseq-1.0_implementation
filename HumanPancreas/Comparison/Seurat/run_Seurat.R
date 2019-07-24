@@ -48,12 +48,12 @@ pancreas.list <- SplitObject(pancreas, split.by = "Study")
 
 for (i in 1:length(pancreas.list)) {
   pancreas.list[[i]] <- NormalizeData(pancreas.list[[i]], verbose = FALSE)
-  pancreas.list[[i]] <- FindVariableFeatures(pancreas.list[[i]], selection.method = "vst", nfeatures = 2480, 
+  pancreas.list[[i]] <- FindVariableFeatures(pancreas.list[[i]], selection.method = "vst", nfeatures = G, 
                                              verbose = FALSE)
 }
 
 reference.list <- pancreas.list[c("GSE81076", "GSE85241","GSE86473","E-MTAB-5061")]
-pancreas.anchors <- FindIntegrationAnchors(object.list = reference.list, dims = 1:30, anchor.features = 3470)
+pancreas.anchors <- FindIntegrationAnchors(object.list = reference.list, dims = 1:30, anchor.features = G)
 
 pancreas.integrated <- IntegrateData(anchorset = pancreas.anchors, dims = 1:30)
 
