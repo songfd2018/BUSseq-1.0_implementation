@@ -1,32 +1,45 @@
 #Apply MNN to the pancreas study.
 rm(list=ls())
 library(scran)
-library(cluster)
+library(mclust) # For ARI
+library(cluster) # For Silhouette
+library(Rtsne) # For t-SNE plot
 
 # coloring
+library(scales)
 require(WGCNA)
 library(RColorBrewer)
 
 
 set.seed(12345)
+# Working directory
+setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/HumanPancreas/Comparison/MNN")
 
 ########################
 # Load Pancreas Data #
 ########################
-# Working directory
-setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/HumanPancreas/Comparison/MNN")
-
 # Loading the file name list of all pancreas count data
-load("../../RawCountData/pancreas_countdata.RData")
+countdata <- read.table("../../RawCountData/count_data_pancreas_v1.txt") 
 
-B <- length(PancreasCounts)
-nb <- rep(NA,B)
-for(b in 1:B){
-  nb[b] <- ncol(PancreasCounts[[b]])
-}
+dim <- unlist(read.table("../../RawCountData/dim_pancreas_v1.txt"))
+N <- dim[1]
+G <- dim[2]
+B <- dim[3]
+nb <- dim[3 + 1:B]
 
 # Load metadata
-metadata <- read.table("../../RawCountData/pancreas_metadata.txt")
+metadata <- read.table("../../RawCountData/metadata_pancreas_v1.txt")
+gene_list <- unlist(read.table("../../RawCountData/gene_list_pancreas_v1.txt",stringsAsFactors = FALSE))
+
+colnames(countdata) <- rownames(metadata)
+rownames(countdata) <- gene_list
+
+PancreasCounts <- list()
+index <- 0
+for(b in 1:B){
+  PancreasCounts[[b]] <- as.matrix(countdata[,index + 1:nb[b]])
+  index <- index + nb[b]
+}
 
 ##################################
 # Apply MNN to the Pancreas Data #
@@ -93,14 +106,6 @@ w_MNN <- factor(clusters$membership)
 #######
 ARI_MNN <- adjustedRandIndex(metadata$CellType,w_MNN)
 
-
-#######################################################################
-# Silhouette coefficient by estimated cell type labels of each method #
-#######################################################################
-MNN_dist <- dist(corrected.mat)
-sil_MNN <- silhouette(as.integer(w_MNN), dist = MNN_dist)
-sil_MNN_true <- silhouette(as.integer(metadata$CellType), dist = MNN_dist)
-
 #################################
 # scatter plots (t-SNE and PCA) #
 #################################
@@ -145,6 +150,7 @@ plot_by_batch<-function(pic_name,Y,subset=NULL,...,xlab = "tSNE 1", ylab = "tSNE
 #################################################
 # Draw t-SNE plots by batch and true cell types #
 #################################################
+MNN_dist <- dist(corrected.mat)
 set.seed(123)
 all.dists.MNN <- as.matrix(MNN_dist)
 tsne_MNN_dist <- Rtsne(all.dists.MNN, is_distance=TRUE, perplexity = 30)
