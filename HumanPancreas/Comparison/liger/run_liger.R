@@ -7,12 +7,13 @@ library(cluster) # For Silhouette
 library(Rtsne) # For t-SNE plot
 
 # coloring
+library(scales)
 require(WGCNA)
 library(RColorBrewer)
 
 set.seed(12345)
 # Working directory
-setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/HumanPancreas/Comparison/liger/")
+setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/HumanPancreas/Comparison/liger/")
 
 ###################
 # Load pancreas Data #
@@ -20,14 +21,17 @@ setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/HumanPancreas/Compa
 # Loading pancreas count data
 countdata <- read.table("../../RawCountData/count_data_pancreas_v1.txt") 
 
+# Load dimension
 dim <- unlist(read.table("../../RawCountData/dim_pancreas_v1.txt"))
 N <- dim[1]
 G <- dim[2]
 B <- dim[3]
 nb <- dim[3 + 1:B]
 
-metadata <- read.table("../../RawCountData/pancreas_metadata.txt")
+# Load metadata
+metadata <- read.table("../../RawCountData/metadata_pancreas_v1.txt")
 
+# Load gene_list
 gene_list <- unlist(read.table("../../RawCountData/gene_list_pancreas_v1.txt",stringsAsFactors = FALSE))
 
 rownames(countdata) <- gene_list
@@ -102,15 +106,6 @@ w_liger <- liger_pancreas@alignment.clusters
 #######
 ARI_liger <- adjustedRandIndex(metadata$CellType,w_liger)
 
-
-#######################################################################
-# Silhouette coefficient by estimated cell type labels of each method #
-#######################################################################
-loading_liger <- liger_pancreas@H.norm
-liger_dist <- dist(loading_liger)
-sil_liger <- silhouette(as.integer(w_liger), dist = liger_dist)
-sil_liger_true <- silhouette(as.integer(metadata$CellType), dist = liger_dist)
-
 #################################
 # scatter plots (t-SNE and PCA) #
 #################################
@@ -156,6 +151,8 @@ plot_by_batch<-function(pic_name,Y,subset=NULL,...,xlab = "tSNE 1", ylab = "tSNE
 # Draw t-SNE plots by batch and true cell types #
 #################################################
 set.seed(123)
+loading_liger <- liger_pancreas@H.norm
+liger_dist <- dist(loading_liger)
 all.dists.liger <- as.matrix(liger_dist)
 tsne_liger_dist <- Rtsne(all.dists.liger, is_distance=TRUE, perplexity = 30)
 
