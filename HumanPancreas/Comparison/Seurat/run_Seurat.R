@@ -8,19 +8,17 @@ library(Rtsne) # For t-SNE plot
 library(ggplot2)
 library(cowplot)
 
-set.seed(123)
-
 # coloring
 library(scales)
 require(WGCNA)
 library(RColorBrewer)
 
-###########################
-# Load Hematopoietic Data #
-###########################
+set.seed(123)
 # Working directory
 setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/HumanPancreas/Comparison/Seurat")
-
+########################
+# Load pancreatic Data #
+########################
 
 # Loading hematopoietic count data
 countdata <- read.table("../../RawCountData/count_data_pancreas_v1.txt") 
@@ -31,19 +29,19 @@ G <- dim[2]
 B <- dim[3]
 nb <- dim[3 + 1:B]
 
-metadata <- read.table("../../RawCountData/pancreas_metadata.txt")
+# Load metadata
+metadata <- read.table("../../RawCountData/metadata_pancreas_v1.txt")
 
-load("../../RawCountData/pancreas_countdata.RData")
-gene_list <- rownames(PancreasCounts[[1]])
-cell_list <- c(colnames(PancreasCounts[[1]]),colnames(PancreasCounts[[2]]),colnames(PancreasCounts[[3]]),colnames(PancreasCounts[[4]]))
+# Load gene_list
+gene_list <- unlist(read.table("../../RawCountData/gene_list_pancreas_v1.txt",stringsAsFactors = F))
+
+rownames(countdata) <- gene_list
+colnames(countdata) <- rownames(metadata)
+
 ##########################################
 # Apply Seurat to the Hematopoietic Data #
 ##########################################
 # Setting the Seurat Object
-colnames(countdata) <- cell_list
-rownames(countdata) <- gene_list
-rownames(metadata) <- cell_list
-
 pancreas <- CreateSeuratObject(countdata, meta.data = metadata)
 pancreas.list <- SplitObject(pancreas, split.by = "Study")
 
@@ -82,8 +80,6 @@ w_Seurat <- pancreas.integrated$seurat_clusters
 reorder <- match(rownames(metadata),names(w_Seurat))
 w_Seurat<- w_Seurat[reorder]
 
-adjustedRandIndex(as.numeric(w_Seurat),as.numeric(metadata$CellType))
-
 Seurat_PCA <- pancreas.integrated@reductions$pca@cell.embeddings[reorder,]
 
 Seurat_corrected <- NULL
@@ -95,14 +91,6 @@ for(g in 1:G){
 # ARI #
 #######
 ARI_Seurat <- adjustedRandIndex(metadata$CellType,w_Seurat)
-
-#######################################################################
-# Silhouette coefficient by estimated cell type labels of each method #
-#######################################################################
-# Silhouette coefficients of the top 30 PCs inferred by Seurat
-Seurat_dist <- dist(Seurat_PCA)
-sil_Seurat <- silhouette(as.integer(w_Seurat), dist = Seurat_dist)
-sil_Seurat_true <- silhouette(as.integer(metadata$CellType), dist = Seurat_dist)
 
 #################################
 # scatter plots (t-SNE and PCA) #
@@ -149,6 +137,7 @@ plot_by_batch<-function(pic_name,Y,subset=NULL,...,xlab = "tSNE 1", ylab = "tSNE
 # Draw t-SNE plots by batch and true cell types #
 #################################################
 set.seed(123)
+Seurat_dist <- dist(Seurat_PCA)
 all.dists.Seurat <- as.matrix(Seurat_dist)
 tsne_Seurat_dist <- Rtsne(all.dists.Seurat, is_distance=TRUE, perplexity = 30)
 

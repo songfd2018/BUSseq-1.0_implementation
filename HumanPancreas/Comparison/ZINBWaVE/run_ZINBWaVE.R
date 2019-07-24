@@ -10,32 +10,32 @@ library(scales)
 require(WGCNA)
 library(RColorBrewer)
 
-########################
-# Load Simulation Data #
-########################
 # Working directory
 setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/HumanPancreas/Comparison/ZINBWaVE")
+########################
+# Load Pancreatic Data #
+########################
+# Loading the file name list of all pancreas count data
+countdata <- read.table("../../RawCountData/count_data_pancreas_v1.txt") 
 
-# Loading pancreas count data
-load("../../RawCountData/pancreas_countdata.RData")
+dim <- unlist(read.table("../../RawCountData/dim_pancreas_v1.txt"))
+N <- dim[1]
+G <- dim[2]
+B <- dim[3]
+nb <- dim[3 + 1:B]
 
-B <- length(PancreasCounts)
-nb <- rep(NA, B)
-for(b in 1:B){
-  nb[b] <- ncol(PancreasCounts[[b]])
-}
+# Load metadata
+metadata <- read.table("../../RawCountData/metadata_pancreas_v1.txt")
+gene_list <- unlist(read.table("../../RawCountData/gene_list_pancreas_v1.txt",stringsAsFactors = FALSE))
 
-metadata <- read.table("../../RawCountData/pancreas_metadata.txt")
+colnames(countdata) <- rownames(metadata)
+rownames(countdata) <- gene_list
 
 
-########################################
-# Apply ZINB-WaVE to the Pancreas Data #
-########################################
-
-data_ZINBW <- NULL
-for(b in 1:B){
-  data_ZINBW <- cbind(data_ZINBW, PancreasCounts[[b]])
-}
+##########################################
+# Apply ZINB-WaVE to the Pancreatic Data #
+##########################################
+data_ZINBW <- as.matrix(countdata)
 
 # Factorizing the batch indicators
 batch_ind <- factor(rep(1:B,nb))
@@ -70,14 +70,6 @@ w_ZINBWaVE <- seu$seurat_clusters
 # ARI #
 #######
 ARI_ZINBWaVE <- adjustedRandIndex(metadata$CellType,w_ZINBWaVE)
-
-#######################################################################
-# Silhouette coefficient by estimated cell type labels of each method #
-#######################################################################
-# Silhouette coefficients of the 10 components inferred by ZINBWaVE
-ZINBWaVE_dist <- dist(zinb_batch@W)
-sil_ZINBWaVE <- silhouette(as.integer(w_ZINBWaVE), dist = ZINBWaVE_dist)
-sil_ZINBWaVE_true <-silhouette(as.integer(metadata$CellType), dist = ZINBWaVE_dist)
 
 #################################
 # scatter plots (t-SNE and PCA) #
@@ -124,6 +116,7 @@ plot_by_batch<-function(pic_name,Y,subset=NULL,...,xlab = "tSNE 1", ylab = "tSNE
 # Draw t-SNE plots by batch and true cell types #
 #################################################
 set.seed(123)
+ZINBWaVE_dist <- dist(zinb_batch@W)
 all.dists.ZINBW <- as.matrix(ZINBWaVE_dist)
 tsne_ZINBW_dist <- Rtsne(all.dists.ZINBW, is_distance=TRUE, perplexity = 30)
 

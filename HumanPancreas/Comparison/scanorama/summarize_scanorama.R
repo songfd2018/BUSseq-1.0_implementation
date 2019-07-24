@@ -3,12 +3,16 @@ rm(list=ls())
 library(mclust) # For ARI
 library(cluster) # For Silhouette
 library(Rtsne) # For t-SNE plot
+library(ggplot2)
+
 # coloring
+library(scales)
 require(WGCNA)
 library(RColorBrewer)
 
+set.seed(12345)
 # Working directory
-setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/HumanPancreas/Comparison/scanorama/")
+setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/HumanPancreas/Comparison/scanorama/")
 
 ###################
 # Load pancreas Data #
@@ -21,7 +25,7 @@ B <- dim[3]
 nb <- dim[1:B + 3]
 
 # Loading the true cell type indicators
-metadata <- read.table("../../RawCountData/pancreas_metadata.txt")
+metadata <- read.table("../../RawCountData/metadata_pancreas_v1.txt")
 
 ##############################
 # load the inference by scVI #
@@ -36,14 +40,6 @@ w_scanorama <- clu_scanorama$clustering
 # ARI #
 #######
 ARI_scanorama <- adjustedRandIndex(metadata$CellType, w_scanorama)
-
-#######################################################################
-# Silhouette coefficient by estimated cell type labels of each method #
-#######################################################################
-# Silhouette coefficients of the low dimensional embedding space
-scanorama_dist <- dist(scanorama_embedding) 
-sil_scanorama <- silhouette(as.integer(w_scanorama), dist = scanorama_dist)
-sil_scanorama_true <- silhouette(as.integer(metadata$CellType), dist = scanorama_dist)
 
 #################################
 # scatter plots (t-SNE and PCA) #
@@ -90,6 +86,7 @@ plot_by_batch<-function(pic_name,Y,subset=NULL,...,xlab = "tSNE 1", ylab = "tSNE
 # Draw t-SNE plots by batch and true cell types #
 #################################################
 set.seed(123)
+scanorama_dist <- dist(scanorama_embedding) 
 all.dists.scanorama <- as.matrix(scanorama_dist)
 tsne_scanorama_dist <- Rtsne(all.dists.scanorama, is_distance=TRUE, perplexity = 30)
 
