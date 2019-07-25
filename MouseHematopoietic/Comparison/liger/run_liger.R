@@ -8,7 +8,8 @@ library(Rtsne) # For t-SNE plot
 
 # Working directory
 #setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/MouseHematopoietic/Comparison/liger/")
-setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/MouseHematopoietic/Comparison/liger/")
+# setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/MouseHematopoietic/Comparison/liger/")
+setwd("/your/working/directory/BUSseq_implementation-1.0/MouseHematopoietic/Comparison/liger/")
 
 ###################
 # Load hemat Data #
@@ -165,4 +166,5 @@ liger_PCA<- "Image/pca_hemat_liger.jpeg"
 plot_by_celltype(liger_PCA, pca.liger$x, xlab = "PC 1", ylab = "PC 2")
 
 # Store the workspace
-save.image("liger_workspace.RData")
+# save.image("liger_workspace.RData")
+save(ARI_liger,tsne_liger_dist,file = "liger_results.RData")

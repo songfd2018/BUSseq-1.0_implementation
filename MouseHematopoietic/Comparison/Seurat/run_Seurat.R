@@ -8,8 +8,9 @@ set.seed(123)
 
 
 # Working directory
-setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/MouseHematopoietic/Comparison/Seurat")
+# setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/MouseHematopoietic/Comparison/Seurat")
 #setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/MouseHematopoietic/Comparison/Seurat")
+setwd("/your/working/directory/BUSseq_implementation-1.0/MouseHematopoietic/Comparison/Seurat/")
 
 ###################
 # Load hemat Data #
@@ -140,4 +141,5 @@ plot_by_celltype(Seu_PCA, Seurat_PCA[,1:2], xlab = "PC 1", ylab = "PC 2")
 
 
 # Store the workspace
-save.image("Seurat_workspace.RData")
+# save.image("Seurat_workspace.RData")
+save(ARI_Seurat,tsne_Seurat_dist,file = "Seurat_results.RData")

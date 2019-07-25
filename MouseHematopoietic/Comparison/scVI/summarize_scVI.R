@@ -7,7 +7,9 @@ set.seed(123)
 
 # Working directory
 # setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/MouseHematopoietic/Comparison/scVI/")
-setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/MouseHematopoietic/Comparison/scVI")
+# setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/MouseHematopoietic/Comparison/scVI")
+setwd("/your/working/directory/BUSseq_implementation-1.0/MouseHematopoietic/Comparison/scVI/")
+
 ###################
 # Load hemat Data #
 ###################
@@ -99,4 +101,5 @@ scVI_PCA<- "Image/pca_hemat_scVI.jpeg"
 plot_by_celltype(scVI_PCA, pca.scVI$x, xlab = "PC 1", ylab = "PC 2")
 
 # Store the workspace
-save.image("scVI_workspace.RData")
+# save.image("scVI_workspace.RData")
+save(ARI_scVI,tsne_scVI_dist,file = "scVI_results.RData")

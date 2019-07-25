@@ -12,8 +12,9 @@ library(Rtsne) # For t-SNE plot
 
 set.seed(123)
 # Working directory
-setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/MouseHematopoietic/Comparison/MNN")
+# setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/MouseHematopoietic/Comparison/MNN")
 #setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/MouseHematopoietic/Comparison/MNN")
+setwd("/your/working/directory/BUSseq_implementation-1.0/MouseHematopoietic/Comparison/MNN/")
 
 ###################
 # Load hemat Data #
@@ -176,4 +177,5 @@ plot_by_celltype(MNN_PCA, pca.mnn$x, xlab = "PC 1", ylab = "PC 2")
 
 
 # Store the workspace
-save.image("MNN_workspace.RData")
+# save.image("MNN_workspace.RData")
+save(ARI_MNN,tsne_MNN_dist,file = "MNN_results.RData")

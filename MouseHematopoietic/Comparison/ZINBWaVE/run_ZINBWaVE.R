@@ -22,8 +22,9 @@ set.seed(123)
 # Load Hematopoietic Data #
 ###########################
 # Working directory
-setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/MouseHematopoietic/Comparison/ZINBWaVE")
-#setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/MouseHematopoietic/Comparison/ZINBWaVE")
+# setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/MouseHematopoietic/Comparison/ZINBWaVE")
+# setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/MouseHematopoietic/Comparison/ZINBWaVE")
+setwd("/your/working/directory/BUSseq_implementation-1.0/MouseHematopoietic/Comparison/ZINBWaVE/")
 
 # Loading hematopoietic count data
 data_ZINBW <- as.matrix(read.table("../../RawCountData/count_data_hemat_v1.txt"))
@@ -149,4 +150,5 @@ ZINBW_PCA<- "./Image/pca_hemat_ZINBWaVE.jpeg"
 plot_by_celltype(ZINBW_PCA, pca.ZINBW$x, xlab = "PC 1", ylab = "PC 2")
 
 # Store the workspace
-save.image("ZINBWaVE_workspace.RData")
+# save.image("ZINBWaVE_workspace.RData")
+save(ARI_ZINBWaVE,tsne_ZINBW_dist,file = "ZINBWaVE_results.RData")

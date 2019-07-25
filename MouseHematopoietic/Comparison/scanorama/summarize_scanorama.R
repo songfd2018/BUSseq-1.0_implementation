@@ -6,7 +6,8 @@ library(Rtsne) # For t-SNE plot
 
 # Working directory
 # setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/MouseHematopoietic/Comparison/scanorama/")
-setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/MouseHematopoietic/Comparison/scanorama")
+# setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/MouseHematopoietic/Comparison/scanorama")
+setwd("/your/working/directory/BUSseq_implementation-1.0/MouseHematopoietic/Comparison/scanorama/")
 
 ###################
 # Load hemat Data #
@@ -102,4 +103,5 @@ scanorama_PCA<- "./Image/pca_hemat_scanorama.jpeg"
 plot_by_celltype(scanorama_PCA, pca.scanorama$x, xlab = "PC 1", ylab = "PC 2")
 
 # Store the workspace
-save.image("scanorama_workspace.RData")
+# save.image("scanorama_workspace.RData")
+save(ARI_scanorama,tsne_scanorama_dist,file = "scanorama_results.RData")
