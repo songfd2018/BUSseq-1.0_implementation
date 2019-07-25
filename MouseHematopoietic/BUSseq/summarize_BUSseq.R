@@ -25,7 +25,10 @@ B <- dim[3]
 nb <- dim[3+1:B]
 
 # Load metadata
-metadata <- read.table("../RawCountData/hemat_metadata.txt")
+metadata <- read.table("../RawCountData/metadata_hemat_v1.txt")
+
+# Load gene_list
+gene_list <- unlist(read.table("../RawCountData/gene_list_hemat_v1.txt",stringsAsFactors = F))
 
 ##########################
 #load posterior inference#
@@ -113,6 +116,7 @@ start_time<-Sys.time()
 print("Calculate corrected read counts:")
 x_corrected<-adjusted_values(x_imputed, B, nb, N, G, K,
                              alpha.est,beta.est,nu.est,delta.est,phi.est,w_BUSseq)
+write.table(x_corrected, file = "x_corrected.txt",row.names = FALSE, col.names = FALSE)
 end_time<-Sys.time()
 running_time<-end_time-start_time
 print(running_time)
@@ -120,25 +124,13 @@ print(running_time)
 ####################
 # Pathway analysis #
 ####################
-load("../RawCountData/hemat_countdata.RData")
-gene_set <- rownames(dataA2)
-intri_gene <- gene_set[D.est==1]
+intri_gene <- gene_list[D.est==1]
 write.table(intri_gene, file = paste0("intrinsic_gene_list.txt"), row.names = FALSE,col.names = FALSE,quote = FALSE)
 
 #######
 # ARI #
 #######
 ARI_BUSseq <- adjustedRandIndex(metadata$CellType,w_BUSseq)
-
-###########################
-# Silhouette Coefficients #
-###########################
-# Silhouette coefficients of the corrected read count matrix of 
-# the identified intrinsic genes by BUSseq
-BUSseq_dist <- dist(t(log1p(x_corrected[D.est==1,])))
-sil_BUSseq <- silhouette(as.integer(w_BUSseq), dist = BUSseq_dist)
-
-sil_BUSseq_true <- silhouette(as.integer(metadata$CellType), dist = BUSseq_dist)
 
 #################################
 # scatter plots (t-SNE and PCA) #
