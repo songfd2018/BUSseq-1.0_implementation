@@ -11,7 +11,9 @@ require(WGCNA)
 library(RColorBrewer)
 
 # Working directory
-setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/HumanPancreas/Comparison/ZINBWaVE")
+# setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/HumanPancreas/Comparison/ZINBWaVE")
+setwd("/your/working/directory/BUSseq_implementation-1.0/HumanPancreas/Comparison/ZINBWaVE/")
+
 ########################
 # Load Pancreatic Data #
 ########################
@@ -134,4 +136,5 @@ ZINBW_PCA<- "./Image/pca_pancreas_ZINBWaVE.jpeg"
 plot_by_celltype(ZINBW_PCA, pca.ZINBW$x, xlab = "PC 1", ylab = "PC 2")
 
 # Store the workspace
-save.image("ZINBWaVE_workspace.RData")
+# save.image("ZINBWaVE_workspace.RData")
+save(ARI_ZINBWaVE,tsne_ZINBW_dist,file = "ZINBWaVE_results.RData")

@@ -12,7 +12,8 @@ library(RColorBrewer)
 
 set.seed(12345)
 # Working directory
-setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/HumanPancreas/Comparison/scVI/")
+# setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/HumanPancreas/Comparison/scVI/")
+setwd("/your/working/directory/BUSseq_implementation-1.0/HumanPancreas/Comparison/scVI/")
 
 ###################
 # Load pancreas Data #
@@ -101,4 +102,5 @@ scVI_PCA<- "Image/pca_pancreas_scVI.jpeg"
 plot_by_celltype(scVI_PCA, pca.scVI$x, xlab = "PC 1", ylab = "PC 2")
 
 # Store the workspace
-save.image("scVI_workspace.RData")
+# save.image("scVI_workspace.RData")
+save(ARI_scVI,tsne_scVI_dist,file = "scVI_results.RData")

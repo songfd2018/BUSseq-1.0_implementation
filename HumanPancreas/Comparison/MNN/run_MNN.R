@@ -13,7 +13,8 @@ library(RColorBrewer)
 
 set.seed(12345)
 # Working directory
-setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/HumanPancreas/Comparison/MNN")
+# setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/HumanPancreas/Comparison/MNN")
+setwd("/your/working/directory/BUSseq_implementation-1.0/HumanPancreas/Comparison/MNN/")
 
 ########################
 # Load Pancreas Data #
@@ -176,5 +177,5 @@ legend(x=-0, y=4, legend=names(table(metadata$CellType)), pch=20, cex=2.5, col=a
 dev.off()
 
 # Store the workspace
-save.image("MNN_workspace.RData")
-
+# save.image("MNN_workspace.RData")
+save(ARI_MNN,tsne_MNN_dist,file = "MNN_results.RData")

@@ -12,7 +12,8 @@ library(RColorBrewer)
 
 set.seed(12345)
 # Working directory
-setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/HumanPancreas/Comparison/scanorama/")
+# setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/HumanPancreas/Comparison/scanorama/")
+setwd("/your/working/directory/BUSseq_implementation-1.0/HumanPancreas/Comparison/scanorama/")
 
 ###################
 # Load pancreas Data #
@@ -104,4 +105,5 @@ scanorama_PCA<- "Image/pca_pancreas_scanorama.jpeg"
 plot_by_celltype(scanorama_PCA, pca.scanorama$x, xlab = "PC 1", ylab = "PC 2")
 
 # Store the workspace
-save.image("scanorama_workspace.RData")
+# save.image("scanorama_workspace.RData")
+save(ARI_scanorama,tsne_scanorama_dist,file = "scanorama_results.RData")

@@ -15,7 +15,9 @@ library(RColorBrewer)
 
 set.seed(123)
 # Working directory
-setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/HumanPancreas/Comparison/Seurat")
+# setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/HumanPancreas/Comparison/Seurat")
+setwd("/your/working/directory/BUSseq_implementation-1.0/HumanPancreas/Comparison/Seurat/")
+
 ########################
 # Load pancreatic Data #
 ########################
@@ -162,6 +164,6 @@ legend(x=-0, y=4, legend=names(table(metadata$CellType)), pch=20, cex=2.5, col=a
 dev.off()
 
 # Store the workspace
-save.image("Seurat_workspace.RData")
-
+# save.image("Seurat_workspace.RData")
+save(ARI_Seurat,tsne_Seurat_dist,file = "Seurat_results.RData")
 
