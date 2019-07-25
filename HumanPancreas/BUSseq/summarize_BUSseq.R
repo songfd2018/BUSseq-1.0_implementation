@@ -1,4 +1,4 @@
-#Apply BUSseq to the pancreas study.
+#Apply BUSseq to the pancreatic study.
 rm(list=ls())
 library(mclust) # For ARI
 library(cluster) # For Silhouette
@@ -11,13 +11,14 @@ require(WGCNA)
 library(RColorBrewer)
 
 set.seed(12345)
-######################
-# Load Pancreas Data #
-######################
-# Working directory
-setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/HumanPancreas/BUSseq")
 
-# Loading pancreas count data
+########################
+# Load Pancreatic Data #
+########################
+# Working directory
+setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/HumanPancreas/BUSseq")
+
+# Loading pancreatic count data
 y_obs <- read.table("../RawCountData/count_data_pancreas_v1.txt")
 
 # Load dimension
@@ -29,7 +30,7 @@ B <- dim[3]
 nb <- dim[3+1:B]
 
 # Load metadata
-metadata <- read.table("../RawCountData/pancreas_metadata.txt")
+metadata <- read.table("../RawCountData/metadata_pancreas_v1.txt")
 
 # Load gene_list
 gene_list <- unlist(read.table("../RawCountData/gene_list_pancreas_v1.txt",stringsAsFactors = F))
@@ -93,9 +94,7 @@ x_imputed <- read.table("Inference_K8/x_imputed.txt")
 ####################
 # Pathway analysis #
 ####################
-load("../RawCountData/pancreas_countdata.RData")
-gene_set <- rownames(PancreasCounts[[1]])
-intri_gene <- gene_set[D.est==1]
+intri_gene <- gene_list[D.est==1]
 write.table(intri_gene, file = paste0("intrinsic_gene_list.txt"), row.names = FALSE,col.names = FALSE,quote = FALSE)
 
 # Pathway_analysis <- read.table("pathway_analysis_by_DAVID.txt",sep = "\t",stringsAsFactors = FALSE)
@@ -137,29 +136,22 @@ start_time<-Sys.time()
 print("Calculate corrected read counts:")
 x_corrected<-adjusted_values(x_imputed, B, nb, N, G, K,
                              alpha.est,beta.est,nu.est,delta.est,phi.est,w_BUSseq)
+write.table(x_corrected, file = "x_corrected.txt", row.names = FALSE, col.names = FALSE)
 end_time<-Sys.time()
 running_time<-end_time-start_time
 print(running_time)
+
+####################
+# Pathway analysis #
+####################
+intri_gene <- gene_list[D.est==1]
+write.table(intri_gene, file = paste0("intrinsic_gene_list.txt"), row.names = FALSE,col.names = FALSE,quote = FALSE)
+
 
 #######
 # ARI #
 #######
 ARI_BUSseq <- adjustedRandIndex(metadata$CellType,w_BUSseq)
-
-###########################
-# Silhouette Coefficients #
-###########################
-# Silhouette coefficients of the corrected read count matrix of 
-# the identified intrinsic genes by BUSseq
-BUSseq_dist <- dist(t(log1p(x_corrected[D.est==1,])))
-sil_BUSseq <- silhouette(as.integer(w_BUSseq), dist = BUSseq_dist)
-sil_BUSseq_true <- silhouette(as.integer(metadata$CellType), dist = BUSseq_dist)
-
-BUSseq_dist_count <- dist(t(x_corrected[D.est==1,]))
-sil_BUSseq_count <- silhouette(as.integer(w_BUSseq), dist = BUSseq_dist_count)
-
-BUSseq_dist_tSNE <- dist(tsne_BUSseq_dist$Y)
-sil_BUSseq_tSNE <- silhouette(as.integer(w_BUSseq), dist = BUSseq_dist_tSNE)
 
 #################################
 # scatter plots (t-SNE and PCA) #
@@ -179,7 +171,7 @@ plot_by_celltype<-function(pic_name,Y,subset=NULL,...,xlab = "tSNE 1", ylab = "t
     subset <- seq_len(nrow(Y))
   }
   # The image with legend
-  jpeg(pic_name,width = 1440, height = 1080, quality = 1000)
+  jpeg(pic_name,width = 1440, height = 1080, quality = 100)
   par(mfrow=c(1,1),mar=c(6,6,4,2),cex.axis=2,cex.main=3,cex.lab=2.5)
   plot(Y[,1], Y[,2], cex=2,
        pch=20, 
@@ -194,7 +186,7 @@ plot_by_batch<-function(pic_name,Y,subset=NULL,...,xlab = "tSNE 1", ylab = "tSNE
   if (is.null(subset)) {
     subset <- seq_len(nrow(Y))
   }
-  jpeg(pic_name,width = 1440, height = 1080, quality = 1000)
+  jpeg(pic_name,width = 1440, height = 1080, quality = 100)
   par(mfrow=c(1,1),mar=c(6,6,4,2),cex.axis=2,cex.main=3,cex.lab=2.5)
   plot(Y[,1], Y[,2], cex=2,
        pch=20, 
