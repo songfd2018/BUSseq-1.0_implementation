@@ -11,7 +11,8 @@ set.seed(123)
 ###################
 # Working directory
 #setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/MouseHematopoietic/BUSseq")
-setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/MouseHematopoietic/BUSseq")
+# setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/MouseHematopoietic/BUSseq")
+setwd("/your/working/directory/BUSseq_implementation-1.0/MouseHematopoietic/BUSseq/")
 
 # Loading hemat count data
 y_obs <- read.table("../RawCountData/count_data_hemat_v1.txt")
@@ -340,4 +341,5 @@ dev.off()
 # dev.off()
 
 # Store the workspace
-save.image("BUSseq_workspace.RData")
+# save.image("BUSseq_workspace.RData")
+save(ARI_BUSseq,tsne_BUSseq_dist,file = "BUSseq_results.RData")
