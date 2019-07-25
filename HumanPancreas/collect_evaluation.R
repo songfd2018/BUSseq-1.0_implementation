@@ -1,25 +1,28 @@
 rm(list=ls())
-library(mclust)
-library(cluster)
+library(mclust) # For ARI
+library(cluster) # For Silhouette
+library(Rtsne) # For t-SNE plot
 library(ggplot2)
-library(Rtsne)
 
+# coloring
 library(scales)
 require(WGCNA)
 library(RColorBrewer)
 
 ###################
-# Load Workspaces #
+# Load results #
 ###################
 # Working directory
-setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/HumanPancreas/")
+# setwd("F:/scRNA/code/0601Cpp_BUSseq/BUSseq_implementation_v1/HumanPancreas/")
+# setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/HumanPancreas/")
+setwd("/your/working/directory/BUSseq_implementation-1.0/HumanPancreas/")
 
-load("BUSseq/BUSseq_workspace.RData")
-comparison_list <- c("liger", "MNN", "Scanorama", "scVI", "Seurat", "ZINBWaVE")
+load("BUSseq/BUSseq_results.RData")
+comparison_list <- c("liger", "MNN", "scanorama", "scVI", "Seurat", "ZINBWaVE")
 num_comparison <- length(comparison_list)
 
 for(m in 1:num_comparison){
-  load(paste0("Comparison/",comparison_list[m],"/",comparison_list[m],"_workspace.RData"))
+  load(paste0("Comparison/",comparison_list[m],"/",comparison_list[m],"_results.RData"))
 }
 
 # load the dimentsion information
@@ -28,6 +31,15 @@ N <- dim[1]
 G <- dim[2]
 B <- dim[3]
 nb <- dim[1:B + 3]
+
+# Load metadata
+metadata <- read.table("RawCountData/metadata_pancreas_v1.txt")
+
+# Load gene_list
+gene_list <- unlist(read.table("RawCountData/gene_list_pancreas_v1.txt",stringsAsFactors = F))
+
+# Load raw count data 
+data_raw <- as.matrix(read.table("RawCountData/count_data_pancreas_v1.txt"))
 
 #############################################################
 # Evaluation of the Performance of All the Methods          #
@@ -58,7 +70,6 @@ ARI_values[7] <- ARI_ZINBWaVE
 
 write.table(ARI_values, "Results/ARI_values.txt",col.names = F)
 
-
 ###############################################################################
 # Silhouette coefficient of tSNE by true cell type labels of each method #
 ###############################################################################
@@ -87,19 +98,11 @@ sil_tSNE_true[,6] <- silhouette(as.integer(metadata$CellType), dist = Seurat_dis
 ZINBWaVE_dist_tSNE <- dist(tsne_ZINBW_dist$Y)
 sil_tSNE_true[,7] <- silhouette(as.integer(metadata$CellType), dist = ZINBWaVE_dist_tSNE)[,3]
 
-write.table(sil_tSNE_true,"./Results/Silhouette_coefs.txt",row.names = F)
+write.table(sil_tSNE_true,"Results/Silhouette_coefs.txt",row.names = F)
 
 # Drawing the violin plot
 sil_com_tSNE_true<-data.frame(sli_coef=as.vector(sil_tSNE_true),
                               method=factor(rep(colnames(sil_tSNE_true),each=N)))
-
-# png("Image/violin_plot_of_Silhouette_coef_tSNE_true.png",width = 960, height = 720)
-# p <- ggplot(sil_com_tSNE_true, aes(x=method, y=sli_coef,fill=method)) +
-#   geom_violin() + xlab(NULL) + ylab(NULL)+theme_bw() +
-#   theme(text = element_text(size=48),axis.text.x =element_text(size=32,angle = 90), axis.text.y = element_text(size =32),panel.border = element_blank(),panel.grid.major = element_blank(),
-#         panel.grid.minor = element_blank(),axis.line = element_line(colour = "black"))
-# p
-# dev.off()
 
 png("Image/boxplot_of_Silhouette_coefs.png",width = 960, height = 720)
 p <- ggplot(sil_com_tSNE_true, aes(x=method, y=sli_coef,fill=method)) +
@@ -121,44 +124,36 @@ allcolors<-labels2colors(metadata$CellType)#[allsamples])
 allcolors[allcolors=="red"]<-"deeppink"
 allcolors[allcolors=="yellow"]<-"orange1"#"darkgoldenrod1"
 
-plot_by_celltype<-function(pic_name,Y,subset=NULL,...,xlab = "", ylab = "",main=""){
+plot_by_celltype<-function(pic_name,Y,subset=NULL,...,xlab = "tSNE 1", ylab = "tSNE 2",main=""){
   if (is.null(subset)) {
     subset <- seq_len(nrow(Y))
   }
   # The image with legend
   jpeg(pic_name,width = 1440, height = 1080, quality = 100)
-  par(mfrow=c(1,1),mar=c(6,6,4,2))
-  plot(Y[,1], Y[,2], cex=3,
+  par(mfrow=c(1,1),mar=c(6,6,4,2),cex.axis=2,cex.main=3,cex.lab=2.5)
+  plot(Y[,1], Y[,2], cex=2,
        pch=20, 
        col=alpha(allcolors[subset],0.6),
-       xaxt="n",yaxt="n",
        xlab=xlab, ylab=ylab, main=main) 
-  axis(1,cex.axis=6,line=2.5,tick = F)#plot the x axis
-  axis(2,cex.axis=6,tick = F)#plot the y axis
   dev.off()
 }
 
 colors4<-brewer.pal(4,"Set3")
 batch.cols<-colors4[rep(1:B,nb)]
-plot_by_batch<-function(pic_name,Y,subset=NULL,...,xlab = "", ylab = "",main=""){
+plot_by_batch<-function(pic_name,Y,subset=NULL,...,xlab = "tSNE 1", ylab = "tSNE 2",main=""){
   if (is.null(subset)) {
     subset <- seq_len(nrow(Y))
   }
   jpeg(pic_name,width = 1440, height = 1080, quality = 100)
-  par(mfrow=c(1,1),mar=c(6,6,4,2))
-  plot(Y[,1], Y[,2], cex=3,
+  par(mfrow=c(1,1),mar=c(6,6,4,2),cex.axis=2,cex.main=3,cex.lab=2.5)
+  plot(Y[,1], Y[,2], cex=2,
        pch=20, 
        col=alpha(batch.cols[subset],0.6),
-       xaxt="n",yaxt="n",
        xlab=xlab, ylab=ylab, main=main)#,  xlab="tSNE 1",ylab="tSNE 2")
-  axis(1,cex.axis=6,line=2.5,tick = F)#plot the x axis
-  axis(2,cex.axis=6,tick = F)#plot the y axis
   dev.off()
 }
 
 # Uncorrected #
-data_raw <- read.table("RawCountData/count_data_pancreas_v1.txt")
-
 set.seed(123)
 all.dists.unc <- as.matrix(dist(log1p(t(data_raw))))
 tsne_uncorrected <- Rtsne(all.dists.unc, is_distance=TRUE, perplexity = 30)
@@ -179,11 +174,11 @@ unc_PCA<- "Image/pca_pancreas_uncorrected.jpeg"
 plot_by_celltype(unc_PCA, pca.unc$x, xlab = "PC 1", ylab = "PC 2")
 
 # legend
-jpeg(file="Image/legend.jpeg", width=600, height=480)
+pdf(file="Image/legend.pdf", width=10, height=8)
 plot(c(-5,5),c(-4,4),type="n", bty="n", axes=FALSE, xlab="", ylab="")
 legend(x=-5, y=4, legend=c("GSE81076","GSE85241","GSE86473","E-MTAB-5061"), pch=20, cex=2.5, col=alpha(colors4,0.6), title = "Batch", bty="n")
 legend(x=-0, y=4, legend=names(table(metadata$CellType)), pch=20, cex=2.5, col=alpha(c("turquoise","blue","brown","orange1","green","deeppink","black"),0.6), title = "Cell Type", bty="n")
 dev.off()
 
-# Store the workspace
-save.image("comparison_workspace.RData")
+# # Store the workspace
+# save.image("comparison_workspace.RData")
