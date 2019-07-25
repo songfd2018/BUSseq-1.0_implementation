@@ -42,7 +42,7 @@ rownames(metadata) <- paste0("Batch_",rep(c(1,2),nb),"_Cell_",c(1:nb[1],1:nb[2])
 gene_list <- unlist(read.table("../../RawCountData/gene_list_hemat_v1.txt",stringsAsFactors = FALSE))
 
 colnames(data_ZINBW) <- paste0("Batch_",rep(c(1,2),nb),"_Cell_",c(1:nb[1],1:nb[2]))
-rownames(data_ZINBW) <- gene_list
+# rownames(data_ZINBW) <- gene_list
 
 #############################################
 # Apply ZINB-WaVE to the Hematopoietic Data #
@@ -66,7 +66,7 @@ assayNames(data_ZINBW)[1] <- "counts"
 merged_zinb <- zinbwave(data_ZINBW, fitted_model = zinb_batch, K = 10, epsilon=1000)
 
 library(Seurat)
-
+set.seed(12345)
 seu <- as.Seurat(x = merged_zinb, counts = "counts", data = "counts")
 
 seu
