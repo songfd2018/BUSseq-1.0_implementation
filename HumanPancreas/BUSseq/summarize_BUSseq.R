@@ -16,7 +16,8 @@ set.seed(12345)
 # Load Pancreatic Data #
 ########################
 # Working directory
-setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/HumanPancreas/BUSseq")
+# setwd("/scratch/data01/BUSseq_cpp/BUSseq_implementation_v1/HumanPancreas/BUSseq")
+setwd("/your/working/directory/BUSseq_implementation-1.0/HumanPancreas/BUSseq/")
 
 # Loading pancreatic count data
 y_obs <- read.table("../RawCountData/count_data_pancreas_v1.txt")
@@ -449,4 +450,5 @@ p
 dev.off()
 
 # Store the workspace
-save.image("BUSseq_workspace.RData")
+# save.image("BUSseq_workspace.RData")
+save(ARI_BUSseq,tsne_BUSseq_dist,file = "BUSseq_results.RData")
