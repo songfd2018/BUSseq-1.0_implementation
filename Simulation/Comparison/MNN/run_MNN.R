@@ -1,0 +1,188 @@
+#Apply MNN to the simualtion study.
+rm(list=ls())
+library(scran)
+library(mclust) # For ARI
+library(cluster) # For Silhouette
+library(Rtsne) # For t-SNE plot
+
+# coloring
+library(scales)
+require(WGCNA)
+library(RColorBrewer)
+
+
+set.seed(12345)
+# Working directory
+setwd("/your/working/directory/BUSseq_implementation-1.0/Simulation/Comparison/MNN/")
+
+########################
+# Load simulation Data #
+########################
+# Loading the file name list of all simulation count data
+countdata <- read.table("../../RawCountData/count_data_simulation_v4.txt") 
+
+dim <- unlist(read.table("../../RawCountData/dim_simulation_v4.txt"))
+N <- dim[1]
+G <- dim[2]
+B <- dim[3]
+nb <- dim[3 + 1:B]
+
+# Load metadata
+metadata <- read.table("../../RawCountData/metadata_simulation_v4.txt")
+gene_list <- paste0("gene_",1:G)
+
+colnames(countdata) <- rownames(metadata)
+rownames(countdata) <- gene_list
+
+simulationCounts <- list()
+index <- 0
+for(b in 1:B){
+  simulationCounts[[b]] <- as.matrix(countdata[,index + 1:nb[b]])
+  index <- index + nb[b]
+}
+
+##################################
+# Apply MNN to the simulation Data #
+##################################
+data_MNN <- simulationCounts
+# Referring to https://github.com/MarioniLab/MNN2017/blob/master/simulation
+# Referring to http://bioconductor.org/packages/devel/workflows/vignettes/simpleSingleCell/inst/doc/batch.html
+# Normalization
+data_MNN_normalized<-list()
+
+for(b in 1:B){
+  high.abF <- scater::calcAverage(data_MNN[[b]]) > 1
+  clustF <- quickCluster(data_MNN[[b]], min.size=10 , method="igraph", subset.row=high.abF)
+  sizeF <- computeSumFactors(data_MNN[[b]], sizes=seq(11, 81, 5), cluster=clustF, subset.row=high.abF)
+  data_MNN_normalized[[b]] <- t(t(data_MNN[[b]])/sizeF)
+}
+
+# Rescaling the first dataset to match the coverage of the second.
+ave<-list()
+for(b in 1:B){
+  ave[[b]] <- rowMeans(data_MNN_normalized[[b]])
+  ave[[b]] <- max(1e-6,ave[[b]])
+  if(b>1){
+    data_MNN_normalized[[b]] <- data_MNN_normalized[[b]] * median(ave[[1]]/ave[[b]])
+  }
+}
+
+# MNN batch correction
+Xmnn <- mnnCorrect(data_MNN_normalized[[1]],
+                   data_MNN_normalized[[2]],
+                   data_MNN_normalized[[3]],
+                   data_MNN_normalized[[4]],
+                   svd.dim=0,
+                   cos.norm.in=TRUE, cos.norm.out=TRUE,
+                   var.adj=TRUE, 
+                   k=20, sigma=0.1)
+
+# combine corrected matrices together
+corrected.df <- do.call(cbind.data.frame, Xmnn$corrected)
+corrected.mat <- as.matrix(t(corrected.df))
+
+##############
+# Clustering #
+##############
+
+omat <- do.call(cbind, data_MNN_normalized)
+sce <- SingleCellExperiment(list(logcounts=log1p(omat)))
+reducedDim(sce, "Corrected") <- corrected.mat
+sce$Batch <- rep(paste0("Batch",1:B),nb)
+
+start_time <- Sys.time()
+snn.gr <- buildSNNGraph(sce, use.dimred="Corrected")
+clusters <- igraph::cluster_walktrap(snn.gr)
+end_time <- Sys.time()
+time_consumption <- end_time - start_time
+
+table(clusters$membership, sce$Batch)
+
+# The estimated cell type indicators by MNN
+w_MNN <- factor(clusters$membership)
+
+#######
+# ARI #
+#######
+ARI_MNN <- adjustedRandIndex(metadata$celltype,w_MNN)
+
+#################################
+# scatter plots (t-SNE and PCA) #
+#################################
+if(!dir.exists("Image")){
+  dir.create("Image")
+}
+
+#####set cell type colorings
+# batch color bar
+color_by_batch<-c("#EB4334","#FBBD06","#35AA53","#4586F3")
+
+# cell type color bar
+color_by_celltype<-c("#F88A7E", "#FFD87D", "#ABD978","#8097D3","#9C7ACE")
+
+
+# plot colored by cell type
+allcolors<-color_by_celltype[metadata$celltype]#[allsamples])
+
+plot_by_celltype<-function(pic_name,Y,subset=NULL,...,xlab = "tSNE 1", ylab = "tSNE 2",main=""){
+  if (is.null(subset)) {
+    subset <- seq_len(nrow(Y))
+  }
+  # The image with legend
+  jpeg(pic_name,width = 1440, height = 1080, quality = 100)
+  par(mfrow=c(1,1),mar=c(10,10,2,2))
+  plot(Y[,1], Y[,2],t="n",xaxt="n",yaxt="n",xlab="", ylab="")
+  axis(1,line = 2.5, cex.axis=6,tick = F)#plot the x axis
+  axis(2,cex.axis=6,tick = F)#plot the y axis
+  mtext(xlab, side=1, line=7.5, cex=6)
+  mtext(ylab, side=2, line=5, cex=6)
+  points(Y[,1], Y[,2], cex=3,
+         pch=20, 
+         col=alpha(allcolors[subset],0.6)) 
+  dev.off()
+}
+
+# plot colored by batch
+batch.cols<-color_by_batch[rep(1:B,nb)]
+plot_by_batch<-function(pic_name,Y,subset=NULL,...,xlab = "tSNE 1", ylab = "tSNE 2",main=""){
+  if (is.null(subset)) {
+    subset <- seq_len(nrow(Y))
+  }
+  jpeg(pic_name,width = 1440, height = 1080, quality = 100)
+  par(mfrow=c(1,1),mar=c(10,10,2,2))
+  plot(Y[,1], Y[,2],t="n",xaxt="n",yaxt="n",xlab="", ylab="")
+  axis(1,line = 2.5, cex.axis=6,tick = F)#plot the x axis
+  axis(2,cex.axis=6,tick = F)#plot the y axis
+  mtext(xlab, side=1, line=7.5, cex=6)
+  mtext(ylab, side=2, line=5, cex=6)
+  points(Y[,1], Y[,2], cex=3,
+         pch=20, 
+         col=alpha(batch.cols[subset],0.6)) 
+  dev.off()
+}
+
+
+#################################################
+# Draw t-SNE plots by batch and true cell types #
+#################################################
+MNN_dist <- dist(corrected.mat)
+set.seed(123)
+all.dists.MNN <- as.matrix(MNN_dist)
+tsne_MNN_dist <- Rtsne(all.dists.MNN, is_distance=TRUE, perplexity = 30)
+
+MNN_by_celltype<- "Image/tsne_simulation_MNN_by_celltype.jpeg"
+plot_by_celltype(MNN_by_celltype, tsne_MNN_dist$Y)
+
+MNN_by_batch <- "Image/tsne_simulation_MNN_by_batch.jpeg"
+plot_by_batch(MNN_by_batch, tsne_MNN_dist$Y)
+
+##########################################
+# Draw the PCA plot on common cell types #
+##########################################
+pca.MNN <- prcomp(corrected.mat, rank=2)
+MNN_PCA<- "Image/pca_simulation_MNN.jpeg"
+plot_by_celltype(MNN_PCA, pca.MNN$x, xlab = "PC 1", ylab = "PC 2")
+
+# Store the workspace
+save.image("MNN_workspace.RData")
+save(ARI_MNN,tsne_MNN_dist,file = "MNN_results.RData")
