@@ -7,4 +7,4 @@ source activate tensorflow_env
 python scVI_log.py
 
 # Summarize the results
-R --vanilla < summarize_scVI.R
+R --vanilla --slave < summarize_scVI.R
