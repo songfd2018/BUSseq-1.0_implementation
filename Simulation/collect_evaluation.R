@@ -25,20 +25,20 @@ for(m in 1:num_comparison){
 }
 
 # load the dimentsion information
-dim <- unlist(read.table("RawCountData/dim_simulation_v4.txt"))
+dim <- unlist(read.table("RawCountData/dim_simulation_v1.txt"))
 N <- dim[1]
 G <- dim[2]
 B <- dim[3]
 nb <- dim[1:B + 3]
 
 # Load metadata
-metadata <- read.table("RawCountData/metadata_simulation_v4.txt")
+metadata <- read.table("RawCountData/metadata_simulation_v1.txt")
 
 # Load gene_list
 gene_list <- paste0("gene-",1:G)
 
 # Load raw count data 
-data_raw <- as.matrix(read.table("RawCountData/count_data_simulation_v4.txt"))
+data_raw <- as.matrix(read.table("RawCountData/count_data_simulation_v1.txt"))
 
 #############################################################
 # Evaluation of the Performance of All the Methods          #
@@ -99,74 +99,37 @@ sil_tSNE_true[,7] <- silhouette(as.integer(metadata$celltype), dist = ZINBWaVE_d
 
 write.table(sil_tSNE_true,"Results/Silhouette_coefs.txt",row.names = F)
 
-# Drawing the violin plot
+# Drawing the boxplot plot
 colnames(sil_tSNE_true) <- c("BUSseq", "LIGER", "MNN", "Seurat", "Scanorama", "scVI", "ZINB-WaVE")
 sil_com_tSNE_true<-melt(sil_tSNE_true)
 colnames(sil_com_tSNE_true) <- c("No_Cell","Method","Silhouette_Coefficient")
 
-jpeg("Image/boxplot_of_Silhouette_coefs.jpg",width = 600, height = 800,quality = 100)
+jpeg("Image/boxplot_of_Silhouette_coefs.jpg",width = 900, height = 600,quality = 100)
 p <- ggplot(sil_com_tSNE_true, aes(x=Method, y=Silhouette_Coefficient,fill=Method)) +
   geom_boxplot() + xlab(NULL) + ylab(NULL)+theme_bw() +
-  theme(text = element_text(size=48),axis.text.x =element_text(size=32,angle = 90), axis.text.y = element_text(size =32),panel.border = element_blank(),panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),axis.line = element_line(colour = "black"))
+  theme(text = element_text(size=48),
+        axis.text.x =element_text(face = "bold",
+                                  size = 36,angle = 90), 
+        axis.text.y = element_text(face = "bold",
+                                   size = 36),
+        panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),axis.line = element_line(colour = "black"),
+        panel.background = element_rect(colour = "black",size = 2))
 p
 dev.off()
 
 #################################
 # scatter plots (t-SNE and PCA) #
 #################################
-if(!dir.exists("Image")){
-  dir.create("Image")
-}
-
-#####set cell type colorings
+#set cell type colorings
 # batch color bar
 color_by_batch<-c("#EB4334","#FBBD06","#35AA53","#4586F3")
+batch_factor <- factor(paste0("Batch ",rep(1:B,nb)))
 
 # cell type color bar
 color_by_celltype<-c("#F88A7E", "#FFD87D", "#ABD978","#8097D3","#9C7ACE")
-
-
-# plot colored by cell type
-allcolors<-color_by_celltype[metadata$celltype]#[allsamples])
-
-plot_by_celltype<-function(pic_name,Y,subset=NULL,...,xlab = "tSNE 1", ylab = "tSNE 2",main=""){
-  if (is.null(subset)) {
-    subset <- seq_len(nrow(Y))
-  }
-  # The image with legend
-  jpeg(pic_name,width = 1440, height = 1080, quality = 100)
-  par(mfrow=c(1,1),mar=c(10,10,2,2))
-  plot(Y[,1], Y[,2],t="n",xaxt="n",yaxt="n",xlab="", ylab="")
-  axis(1,line = 2.5, cex.axis=6,tick = F)#plot the x axis
-  axis(2,cex.axis=6,tick = F)#plot the y axis
-  mtext(xlab, side=1, line=7.5, cex=6)
-  mtext(ylab, side=2, line=5, cex=6)
-  points(Y[,1], Y[,2], cex=3,
-         pch=20, 
-         col=alpha(allcolors[subset],0.6)) 
-  dev.off()
-}
-
-# plot colored by batch
-batch.cols<-color_by_batch[rep(1:B,nb)]
-plot_by_batch<-function(pic_name,Y,subset=NULL,...,xlab = "tSNE 1", ylab = "tSNE 2",main=""){
-  if (is.null(subset)) {
-    subset <- seq_len(nrow(Y))
-  }
-  jpeg(pic_name,width = 1440, height = 1080, quality = 100)
-  par(mfrow=c(1,1),mar=c(10,10,2,2))
-  plot(Y[,1], Y[,2],t="n",xaxt="n",yaxt="n",xlab="", ylab="")
-  axis(1,line = 2.5, cex.axis=6,tick = F)#plot the x axis
-  axis(2,cex.axis=6,tick = F)#plot the y axis
-  mtext(xlab, side=1, line=7.5, cex=6)
-  mtext(ylab, side=2, line=5, cex=6)
-  points(Y[,1], Y[,2], cex=3,
-         pch=20, 
-         col=alpha(batch.cols[subset],0.6)) 
-  dev.off()
-}
-
+celltype_factor <- factor(paste0("Celltype ",metadata$celltype))
 
 # Uncorrected #
 set.seed(123)
@@ -174,10 +137,42 @@ all.dists.unc <- as.matrix(dist(log1p(t(data_raw))))
 tsne_uncorrected <- Rtsne(all.dists.unc, is_distance=TRUE, perplexity = 30)
 
 unc_by_celltype<- "Image/tsne_simulation_uncorrected_by_celltype.jpeg"
-plot_by_celltype(unc_by_celltype, tsne_uncorrected$Y)
+dat_frame <- data.frame(Var1 = tsne_uncorrected$Y[,1], 
+                        Var2 = tsne_uncorrected$Y[,2], 
+                        col = celltype_factor)
+
+jpeg(unc_by_celltype,width = 900, height = 600, quality = 100)
+ggplot(dat_frame, aes(x= Var1, y= Var2, colour= col)) +
+  geom_point(size=4) + theme_classic() +
+  scale_colour_manual(values = alpha(color_by_celltype,0.6)) +
+  xlab("tSNE 1") + ylab("tSNE 2") +
+  theme(axis.text.x = element_text(face = "bold",
+                                   size = 44),
+        axis.text.y = element_text(face = "bold",
+                                   size = 44),
+        axis.title=element_text(size=48,face="bold"),
+        panel.background = element_rect(colour = "black",size = 2),
+        legend.position = "none")
+dev.off()
 
 unc_by_batch <- "Image/tsne_simulation_uncorrected_by_batch.jpeg"
-plot_by_batch(unc_by_batch, tsne_uncorrected$Y)
+dat_frame <- data.frame(Var1 = tsne_uncorrected$Y[,1], 
+                        Var2 = tsne_uncorrected$Y[,2], 
+                        col = batch_factor)
+
+jpeg(unc_by_batch,width = 900, height = 600, quality = 100)
+ggplot(dat_frame, aes(x= Var1, y= Var2, colour= col)) +
+  geom_point(size=4) + theme_classic() +
+  scale_colour_manual(values = alpha(color_by_batch,0.6)) +
+  xlab("tSNE 1") + ylab("tSNE 2") +
+  theme(axis.text.x = element_text(face = "bold",
+                                   size = 36),
+        axis.text.y = element_text(face = "bold", 
+                                   size = 36),
+        axis.title=element_text(size=44,face="bold"),
+        panel.background = element_rect(colour = "black",size = 2),
+        legend.position = "none")
+dev.off()
 
 ##################
 # Draw PCA plots #
@@ -185,14 +180,30 @@ plot_by_batch(unc_by_batch, tsne_uncorrected$Y)
 
 # Uncorrected #
 pca.unc <- prcomp(log1p(t(data_raw)), rank=2)
-unc_PCA<- "Image/coloring6_pca_simulation_uncorrected.jpeg"
-plot_by_celltype(unc_PCA, pca.unc$x, xlab = "PC 1", ylab = "PC 2")
+unc_PCA<- "Image/pca_simulation_uncorrected.jpeg"
+dat_frame <- data.frame(Var1 = pca.unc$x[,1], 
+                        Var2 = pca.unc$x[,2], 
+                        col = celltype_factor)
+jpeg(unc_PCA,width = 900, height = 600, quality = 100)
+ggplot(dat_frame, aes(x= Var1, y= Var2, colour= col)) +
+  geom_point(size=4) + theme_classic() +
+  scale_colour_manual(values = alpha(color_by_celltype,0.6)) +
+  xlab("PC 1") + ylab("PC 2") +
+  theme(axis.text.x = element_text(face = "bold",
+                                   size = 36),
+        axis.text.y = element_text(face = "bold", 
+                                   size = 36),
+        axis.title=element_text(size=44,face="bold"),
+        panel.background = element_rect(colour = "black",size = 2),
+        legend.position = "none")
+dev.off()
 
 # legend
-jpeg("Image/legend.jpeg",width = 600, height = 400, quality = 100)
+K <- 5
+jpeg("Image/legend_simulation_v1.jpeg",width = 600, height = 400, quality = 100)
 plot(c(-5,5),c(-4,4),type="n", bty="n", axes=FALSE, xlab="", ylab="")
-legend(x=-5, y=4, legend=c("Batch_1","Batch_2","Batch_3","Batch_4"), pch=20, cex=2.5, col=alpha(color_by_batch,0.6), title = "Batch", bty="n")
-legend(x=-0, y=4, legend=names(table(metadata$celltype)), pch=20, cex=2.5, col=alpha(c("turquoise","blue","brown","orange1","green","deeppink","black"),0.6), title = "Cell Type", bty="n")
+legend(x=-5, y=4, legend=paste0("Batch ",1:B), pch=20, cex=2.5, col=color_by_batch, title = "Batch", bty="n")
+legend(x=-0, y=4, legend=paste0("Celltype ",1:K), pch=20, cex=2.5, col=color_by_celltype, title = "Cell Type", bty="n")
 dev.off()
 
 # Store the workspace
