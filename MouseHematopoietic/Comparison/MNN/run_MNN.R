@@ -9,6 +9,7 @@ library(scran)
 library(mclust) # For ARI
 library(cluster) # For Silhouette
 library(Rtsne) # For t-SNE plot
+library(ggplot2)
 
 set.seed(123)
 # Working directory
