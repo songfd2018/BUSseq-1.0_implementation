@@ -3,6 +3,7 @@ rm(list=ls())
 library(mclust) # For ARI
 library(cluster) # For Silhouette
 library(Rtsne) # For t-SNE plot
+library(ggplot2)
 
 # Working directory
 setwd("/your/working/directory/BUSseq_implementation-1.0/MouseHematopoietic/Comparison/scanorama/")
