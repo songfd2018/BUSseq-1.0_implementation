@@ -10,14 +10,13 @@ This folder contains scripts that generate Figure 3 and 4 for the simulation stu
 2. Run `BUSseq/run_BUSseq.sh` to apply BUSseq to the simualtion dataset. 
    - conduct BUSseq and obatin the posterior sampling and infernece (according to the BIC criterion, we select K = 5)
    - output the list of identified intrinsic genes into `intrinsic_gene_list.txt` and the corrected read count matrix into `x_corrected.txt`;
-   - implement batch effect correction to obtain the corrected read count matrix;
    - calculate ARI between the estimated cell types by BUSseq and true cell type labels;
    - draw the t-SNE and PCA plots of BUSseq correction and save them in the folder `BUSseq/Image`;
    - save the ARI and t-SNE coordinates as `BUSseq/BUSseq_results.RData`;
 
 3. Run `Comparison/liger/run_liger.R` to apply [LIGER](https://github.com/MacoskoLab/liger) to the simulation dataset.
-   - calculate ARI between the estimated cell types by liger and true cell type labels;
-   - draw the t-SNE and PCA plots of liger correction and save them in the folder `Comparison/liger/Image`;
+   - calculate ARI between the estimated cell types by LIGER and true cell type labels;
+   - draw the t-SNE and PCA plots of LIGER correction and save them in the folder `Comparison/liger/Image`;
    - save the ARI and t-SNE coordinates as `Comparison/liger/liger_results.RData`;
 
 4. Run `Comparison/MNN/run_MNN.R` to apply [MNN](https://github.com/MarioniLab/MNN2017) to the simulation dataset.
@@ -35,7 +34,7 @@ This folder contains scripts that generate Figure 3 and 4 for the simulation stu
    - draw the t-SNE and PCA plots of scVI correction and save them in the folder `Comparison/scVI/Image`;
    - save the ARI and t-SNE coordinates as `Comparison/scVI/scVI_results.RData`;
 
-7. Run `Comparison/Seurat/run_Seurat.R` to apply [Seurat](https://satijalab.org/seurat/) to the simulation dataset.
+7. Run `Comparison/Seurat/run_Seurat.R` to apply [Seurat](https://satijalab.org/seurat/) to the simulation dataset.a
    - calculate ARI between the estimated cell types by Seurat and true cell type labels;
    - draw the t-SNE and PCA plots of Seurat correction and save them in the folder `Comparison/Seurat/Image`;
    - save the ARI and t-SNE coordinates as `Comparison/Seurat/Seurat_results.RData`;
