@@ -1,29 +1,32 @@
-#Apply BUSseq to the pancreatic study.
+#Apply BUSseq to the simulation study.
 rm(list=ls())
 library(mclust) # For ARI
 library(cluster) # For Silhouette
 library(Rtsne) # For t-SNE plot
 library(ggplot2)
-library(reshape2) # For melt
 
 # coloring
 library(scales)
 library(WGCNA)
 library(RColorBrewer)
 
+# heatmap.3 referring https://raw.githubusercontent.com/obigriffith/biostar-tutorials/master/Heatmaps/heatmap.3.R
+library("devtools")
+source_url("https://raw.githubusercontent.com/obigriffith/biostar-tutorials/master/Heatmaps/heatmap.3.R")
+
 set.seed(12345)
 
-########################
-# Load Pancreatic Data #
-########################
+#######################
+# Load Simulated Data #
+#######################
 # Working directory
-setwd("/your/working/directory/BUSseq_implementation-1.0/HumanPancreas/BUSseq/")
+setwd("/your/working/directory/BUSseq_implementation-1.0/Simulation/BUSseq/")
 
 # Loading pancreatic count data
-y_obs <- read.table("../RawCountData/count_data_pancreas_v1.txt")
+y_obs <- read.table("../RawCountData/count_data_simulation_v1.txt")
 
 # Load dimension
-dim <- read.table("../RawCountData/dim_pancreas_v1.txt")
+dim <- read.table("../RawCountData/dim_simulation_v1.txt")
 dim <- unlist(dim)
 N <- dim[1]
 G <- dim[2]
@@ -31,68 +34,99 @@ B <- dim[3]
 nb <- dim[3+1:B]
 
 # Load metadata
-metadata <- read.table("../RawCountData/metadata_pancreas_v1.txt")
+metadata <- read.table("../RawCountData/metadata_simulation_v1.txt")
 
 # Load gene_list
-gene_list <- unlist(read.table("../RawCountData/gene_list_pancreas_v1.txt",stringsAsFactors = F))
+gene_list <- paste0("gene-",1:G)
 
-##########################
-#load posterior inference#
-##########################
-K <- 8
+##########################################################
+# Compare the BIC values for different Ks as Figure 3(j) #
+##########################################################
+if(!dir.exists("Image")){
+  dir.create("Image")
+}
+proj <- "simulation"
+k_sel <-3:10
+N_k <- length(k_sel)
+
+BIC.record <- rep(NA,N_k)
+names(BIC.record) <- paste0("K=",k_sel)
+v <- 1
+for(k in k_sel){
+  post_dir<-paste("Inference_K",k,sep="")
+  if(dir.exists(post_dir)){
+    # load BIC
+    BIC<- unlist(read.table(paste(post_dir,"/BIC.txt",sep="")))
+    BIC.record[k-k_sel[1] + 1] <- BIC
+    message(paste("Finish loading the results of ",proj,"_v",v,"_K",k,"!/n",sep=""))
+  }else{
+    message(paste("The results of ",proj,"_v",v,"_K",k," doesn't exist!/n",sep=""))
+  }
+}
+
+jpeg("Image/BIC_values.jpeg",width = 540, height = 810)
+par(mar=c(5.1,5.1,4.1,2.1))
+plot(k_sel,BIC.record,xlab= "K",ylab = "BIC",type="n",cex.axis=2.5,cex.lab=3)
+points(k_sel,BIC.record,type="b",pch=19,cex=3)
+dev.off()
+
+#####################################
+# Load posterior inference of K = 5 #
+#####################################
+K <- k_sel[which.min(BIC.record)]
 
 # load w_est
-w.est <- read.table("Inference_K8/w_est.txt")
+w.est <- read.table(paste("Inference_K",K,"/w_est.txt",sep=""))
 w_BUSseq <- unlist(w.est)
 
 # load alpha_est
 # alpha.post <- as.matrix(read.big.matrix("alpha_post.txt",sep=" ",skip=num.burntin,type="double"))
-alpha.est <- read.table("Inference_K8/alpha_est.txt")
+alpha.est <- read.table(paste("Inference_K",K,"/alpha_est.txt",sep=""))
 alpha.est <- unlist(alpha.est)
 # load beta_est
-beta.est <- read.table("Inference_K8/beta_est.txt")
+beta.est <- read.table(paste("Inference_K",K,"/beta_est.txt",sep=""))
 beta.est <- matrix(unlist(beta.est),G,K)
 logmu.est<-beta.est+alpha.est
 
 # load nu_est
-nu.est <- read.table("Inference_K8/nu_est.txt")
+nu.est <- read.table(paste("Inference_K",K,"/nu_est.txt",sep=""))
 nu.est <- matrix(unlist(nu.est),G,B)
 
 # load delta_est
-delta.est <- read.table("Inference_K8/delta_est.txt")
+delta.est <- read.table(paste("Inference_K",K,"/delta_est.txt",sep=""))
 delta.est <- unlist(delta.est)
 
 # load gamma_est
-gamma.est <- read.table("Inference_K8/gamma_est.txt")
+gamma.est <- read.table(paste("Inference_K",K,"/gamma_est.txt",sep=""))
 gamma.est <- matrix(unlist(gamma.est),B,2)
 
 
 # load phi_est
-phi.est <- read.table("Inference_K8/phi_est.txt")
+phi.est <- read.table(paste("Inference_K",K,"/phi_est.txt",sep=""))
 phi.est <- matrix(unlist(phi.est),G,B)
 
 # load pi_est
-pi.est <- read.table("Inference_K8/pi_est.txt")
+pi.est <- read.table(paste("Inference_K",K,"/pi_est.txt",sep=""))
 pi.est <- matrix(unlist(pi.est),B,K)
 order.est<-order(pi.est[1,],decreasing = T)
 
 # load p_est
-p.est <- read.table("Inference_K8/p_est.txt")
+p.est <- read.table(paste("Inference_K",K,"/p_est.txt",sep=""))
 
 # load tau0_est
-tau0.est <- read.table("Inference_K8/tau0_est.txt")
+tau0.est <- read.table(paste("Inference_K",K,"/tau0_est.txt",sep=""))
 
 # load PPI_est
-PPI.est <- read.table("Inference_K8/PPI_est.txt")
-D.est <- unlist(read.table("Inference_K8/IG_est.txt"))
+PPI.est <- read.table(paste("Inference_K",K,"/PPI_est.txt",sep=""))
+D.est <- unlist(read.table(paste("Inference_K",K,"/IG_est.txt",sep="")))
 
 # load X_imputed
-x_imputed <- read.table("Inference_K8/x_imputed.txt")
+x_imputed <- read.table(paste("Inference_K",K,"/x_imputed.txt",sep=""))
 
 
-####################
-# Pathway analysis #
-####################
+################################################
+# Prepare intrinsic genes for Pathway analysis #
+################################################
 intri_gene <- gene_list[D.est==1]
 write.table(intri_gene, file = paste0("intrinsic_gene_list.txt"), row.names = FALSE,col.names = FALSE,quote = FALSE)
 
@@ -129,41 +163,153 @@ print(running_time)
 #######
 # ARI #
 #######
-ARI_BUSseq <- adjustedRandIndex(metadata$CellType,w_BUSseq)
+ARI_BUSseq <- adjustedRandIndex(metadata$celltype,w_BUSseq)
 
-#################################
-# scatter plots (t-SNE and PCA) #
-#################################
-if(!dir.exists("Image")){
-  dir.create("Image")
+########################
+# Set coloring to plot #
+########################
+
+#set cell type colorings
+# batch color bar
+color_by_batch<-c("#EB4334","#FBBD06","#35AA53","#4586F3")
+batch_factor <- factor(paste0("Batch ",rep(1:B,nb)))
+batch.cols<-color_by_batch[rep(1:B,nb)]
+
+# cell type color bar
+color_by_celltype<-c("#F88A7E", "#FFD87D", "#ABD978","#8097D3","#9C7ACE")
+celltype_factor <- factor(paste0("Celltype ",metadata$celltype))
+
+###############################
+# Draw the Heatmap in Figure 3#
+###############################
+# color keys in the heatmap
+# for mu.syn
+color_key_mu <-  colorRampPalette(c("#F2F2F2","black"))(11)
+
+# for nu.syn
+colorsChoice_nu_low <- colorRampPalette(c("#0571b0","#F2F2F2"))
+colorsChoice_nu_high <- colorRampPalette(c("#F2F2F2","#bd0026"))
+color_key_nu <- c(colorsChoice_nu_low(6),colorsChoice_nu_high(6)[-1])
+
+# for log_x log_y
+colorsChoice_count <- colorRampPalette(c("#F2F2F2","black"))(11)
+
+# The splitting points for log-scale mean expression levels and batch effects
+break_mu <- seq(0, 3.5, length.out = 12)
+break_nu <- seq(-4.2, 4.2, length.out = 12)
+break_logcount <- seq(0,8.5,length.out = 12)
+
+##########################################################################
+# The heatmap of the estimated log-scale mean expression levels (Fig 3f) #
+log_mu_celltype_est <- alpha.est + beta.est
+
+# Sorting cell-type-specific expression levels 
+# in the decreasing order of the proprotions of the first cell type
+# because the true cell types are sorted in the same decreasing order
+order.est <- order(pi.est[1,],decreasing = T)
+
+jpeg("Image/heatmap_simulation_est_log_mean_expression_levels.jpeg",width = 1080, height = 1440)
+heatmap.3(log_mu_celltype_est[, order.est],
+          dendrogram = "none",#with cluster tree
+          Rowv = FALSE, Colv = FALSE,
+          labRow = FALSE, labCol = FALSE,
+          ColSideColors = color_by_celltype,
+          lmat=rbind(c(5,4), c(0,1), c(3,2)),#1=heatmap, 2=row dendogram, 3=col dendogram, 4= key 
+          lhei=c(0.4,0.4,3.6),
+          col=color_key_mu,breaks = break_mu, key = FALSE)
+dev.off()
+
+##################################################
+# The heatmap of location batch effects (Fig 3g) #
+batch_effects_est <- nu.est
+
+jpeg("Image/heatmap_simulation_est_batch_effects.jpeg",width = 1080, height = 1440)
+heatmap.3(batch_effects_est,
+          dendrogram = "none",#with cluster tree
+          Rowv = FALSE, Colv = FALSE,
+          labRow = FALSE, labCol = FALSE,
+          ColSideColors = color_by_batch,
+          lmat=rbind(c(5,4), c(0,1), c(3,2)),#1=heatmap, 2=row dendogram, 3=col dendogram, 4= key 
+          lhei=c(0.6,0.4,3.6),
+          col=color_key_nu,breaks = break_nu, key = FALSE)
+dev.off()
+
+#####################################################################
+# The heatmap of log-scale underlying true read count data (Fig 3h) #
+log_imputed_count_est <- log1p(x_imputed)
+
+# Batch color bar for count data matrix
+color_by_batch_count <- rep(color_by_batch,nb)
+
+# Cell type color bar for count data matrix
+color_by_celltype_count <- rep(NA,N)
+celltype_est <- unlist(w.est) + 1
+for(i in 1:N){
+  color_by_celltype_count[i] <- color_by_celltype[which(celltype_est[i]==order.est)]
 }
 
-#####set cell type colorings
-color_by_celltype <- c(brewer.pal(6,"Set3"),"black")
-color_by_celltype[c(1,6)] <- color_by_celltype[c(6,1)]
-celltype_factor <- factor(metadata$CellType, levels = c("Alpha", "Beta", "Gamma", "Delta", "Acinar", "Ductal", "other"))
 
-color_by_celltype_est <- c(brewer.pal(7,"Set3"),"black")
-color_by_celltype_est <- color_by_celltype_est[c(4,1,6,2,3,8,5,7)]
+# Upper color bar for batch, lower color bar for cell type
+col_annotation<-cbind(color_by_celltype_count,color_by_batch_count)
+colnames(col_annotation) <- NULL
 
-#####set batch colorings
-color_by_batch <- c("#EB4334","#FBBD06","#35AA53","#4586F3")
-batch_factor <- factor(rep(1:B,nb))
+jpeg("Image/heatmap_simulation_log_imputed_count.jpeg",width = 1080, height = 1440)
+heatmap.3(log_imputed_count_est,
+          dendrogram = "none",#with cluster tree
+          Rowv = FALSE, Colv = FALSE,
+          labRow = FALSE, labCol = FALSE,
+          ColSideColors = col_annotation,
+          lmat=rbind(c(5,4), c(0,1), c(3,2)),#1=heatmap, 2=row dendogram, 3=col dendogram, 4= key
+          lhei=c(0.6,0.4,3.6),
+          col=colorsChoice_count,breaks = break_logcount, key = FALSE)
+dev.off()
 
 
-#################################################
-# Draw t-SNE plots by batch and true cell types #
-#################################################
+###############################################################
+# The heatmap of log-scale corrected read count data (Fig 3i) #
+
+# Sharing the same double color bar and splitting points 
+# as that of the underlying true count data
+jpeg("Image/heatmap_simulation_log_corrected_count.jpeg",width = 1080, height = 1440)
+heatmap.3(log1p(x_corrected),
+          dendrogram = "none",#with cluster tree
+          Rowv = FALSE, Colv = FALSE,
+          labRow = FALSE, labCol = FALSE,
+          ColSideColors = col_annotation,
+          lmat=rbind(c(5,4), c(0,1), c(3,2)),#1=heatmap, 2=row dendogram, 3=col dendogram, 4= key
+          lhei=c(0.5,0.4,3.6),
+          col=colorsChoice_count,breaks = break_logcount, key = FALSE)
+dev.off()
+
+####################################################################################################################
+# The scatter plot of the estimated cell-specific size factors versus the true cell-specific size factors (Fig 3e) #
+
+# Loading the true cell-specific size factors
+cell_effect_true_vec <- unlist(read.table("../True_para/delta_syn.txt"))
+
+# Obtaining the estimated cell-specific size factors
+cell_effect_est <- delta.est
+
+jpeg("./Image/scatter_simulation_cell_size_factors.jpeg",width = 540, height = 810)
+par(mar = c(5.1,6.1,4.1,2.1)) 
+plot(cell_effect_true_vec,cell_effect_est,xlab = expression(paste("True ",delta)), ylab = expression(paste("Estimated ",delta)),type="n",ylim = c(-3,2),xlim = c(-3,2),cex.axis = 3, cex.lab = 3)
+points(cell_effect_true_vec,cell_effect_est,pch = 1,cex=3)
+abline(a=0,b=1,lty=3,cex=3)
+dev.off()
+
+##################################################################
+# Draw t-SNE plots by batch and true cell types as Figure 4(c,d) #
+##################################################################
 set.seed(123)
 all.dists.BUSseq <- as.matrix(dist(t(log1p(x_corrected[D.est==1,]))))
 tsne_BUSseq_dist <- Rtsne(all.dists.BUSseq, is_distance=TRUE, perplexity = 30)
 
-BUSseq_by_celltype<- "Image/tsne_pancreas_BUSseq_by_celltype.jpg"
+BUSseq_by_celltype<- "Image/tsne_simulation_BUSseq_by_celltype.jpeg"
 dat_frame <- data.frame(Var1 = tsne_BUSseq_dist$Y[,1], 
                         Var2 = tsne_BUSseq_dist$Y[,2], 
                         col = celltype_factor)
 
-jpeg(BUSseq_by_celltype,width = 800, height = 600, quality = 100)
+jpeg(BUSseq_by_celltype,width = 900, height = 600, quality = 100)
 ggplot(dat_frame, aes(x= Var1, y= Var2, colour= col)) +
   geom_point(size=4) + theme_classic() +
   scale_colour_manual(values = alpha(color_by_celltype,0.6)) +
@@ -177,12 +323,12 @@ ggplot(dat_frame, aes(x= Var1, y= Var2, colour= col)) +
         legend.position = "none")
 dev.off()
 
-BUSseq_by_batch <- "Image/tsne_pancreas_BUSseq_by_batch.jpg"
+BUSseq_by_batch <- "Image/tsne_simulation_BUSseq_by_batch.jpeg"
 dat_frame <- data.frame(Var1 = tsne_BUSseq_dist$Y[,1], 
                         Var2 = tsne_BUSseq_dist$Y[,2], 
                         col = batch_factor)
 
-jpeg(BUSseq_by_batch,width = 800, height = 600, quality = 100)
+jpeg(BUSseq_by_batch,width = 900, height = 600, quality = 100)
 ggplot(dat_frame, aes(x= Var1, y= Var2, colour= col)) +
   geom_point(size=4) + theme_classic() +
   scale_colour_manual(values = alpha(color_by_batch,0.6)) +
@@ -196,16 +342,17 @@ ggplot(dat_frame, aes(x= Var1, y= Var2, colour= col)) +
         legend.position = "none")
 dev.off()
 
-##################
-# Draw PCA plots #
-##################
+#####################
+# Draw the PCA plot #
+#####################
 pca.BUSseq <- prcomp(t(log1p(x_corrected[D.est==1,])), rank=2)
-BUSseq_PCA<- "Image/pca_pancreas_BUSseq.jpeg"
+
+BUSseq_PCA<- "Image/pca_simulation_BUSseq.jpeg"
 dat_frame <- data.frame(Var1 = pca.BUSseq$x[,1], 
                         Var2 = pca.BUSseq$x[,2], 
                         col = celltype_factor)
 
-jpeg(BUSseq_PCA,width = 800, height = 600, quality = 100)
+jpeg(BUSseq_PCA,width = 900, height = 600, quality = 100)
 ggplot(dat_frame, aes(x= Var1, y= Var2, colour= col)) +
   geom_point(size=4) + theme_classic() +
   scale_colour_manual(values = alpha(color_by_celltype,0.6)) +
@@ -218,221 +365,6 @@ ggplot(dat_frame, aes(x= Var1, y= Var2, colour= col)) +
         panel.background = element_rect(colour = "black",size = 2),
         legend.position = "none")
 dev.off()
-
-
-
-##############################################
-# Draw the expression levels of marker genes #
-##############################################
-# GCG for alpha cell
-GCG_index <-  which(gene_list=="GCG")
-
-# INS for beta cells
-INS_index <-  which(gene_list=="INS")
-
-# SST for delta cells
-SST_index <-  which(gene_list=="SST")
-
-# PPY for gamma cells
-PPY_index <-  which(gene_list=="PPY")
-
-# PRSS1 for acinar cells
-PRSS1_index <-  which(gene_list=="PRSS1")
-
-# KRT19 for ductal cells
-KRT19_index <-  which(gene_list=="KRT19")
-
-marker_genes <- data.frame(Cell_Index = 1:N, Protocol = metadata$Protocol, 
-                           tSNE1 =  tsne_BUSseq_dist$Y[,1], tSNE2 =  tsne_BUSseq_dist$Y[,2],
-                           Study = metadata$Study, Celltype = metadata$CellType, 
-                           GCG = log1p(unlist(x_corrected[GCG_index,])),
-                           INS = log1p(unlist(x_corrected[INS_index,])), 
-                           SST = log1p(unlist(x_corrected[SST_index,])),
-                           PPY = log1p(unlist(x_corrected[PPY_index,])),
-                           PRSS1 = log1p(unlist(x_corrected[PRSS1_index,])),
-                           KRT19 = log1p(unlist(x_corrected[KRT19_index,])))
-
-# Higher expression levels of GCG gene in alpha cells
-jpeg(filename = "Image/Pancreas_GCG_for_alpha.jpeg",width = 800, height = 600,quality = 100)
-ggplot(marker_genes, aes(x=tSNE1, y=tSNE2, colour=GCG,
-                         shape=(Celltype=="Alpha"))) +
-  geom_point(size=3) + theme_classic() +
-  scale_color_gradient2(low = "#0571b0",
-                        midpoint = 0,
-                        mid = "#ffffcc",
-                        high = "#bd0026",
-                        space="Lab") +
-  scale_shape_manual(values = c(4, 16), breaks = c(TRUE,FALSE)) +
-  guides(shape = guide_legend(order = 1, 
-                              override.aes = list(size = 12))) + # change symbol size in the legend 
-  labs(shape = "Is Alpha Cell") +
-  xlab("PC 1") + ylab("PC 2") +
-  theme(axis.text.x = element_text(face = "bold", #color = "#993333", 
-    size = 36), #angle = 45),
-    axis.text.y = element_text(face = "bold", #color = "blue", 
-      size = 36),#, angle = 45))
-    axis.title=element_text(size=44,face="bold"),
-    legend.text=element_text(size=28,face="bold"),
-    legend.title = element_text(size = 36,face="bold"),
-    panel.background = element_rect(colour = "black",size = 2))
-dev.off()
-
-# Higher expression levels of INS gene in beta cells
-jpeg(filename = "Image/Pancreas_INS_for_beta.jpeg",width = 800, height = 600,quality = 100)
-ggplot(marker_genes, aes(x=tSNE1, y=tSNE2, colour=INS,
-                         shape=(Celltype=="Beta"))) +
-  geom_point(size=3) + theme_classic() +
-  scale_color_gradient2(low = "#0571b0",
-                        midpoint = 0,
-                        mid = "#ffffcc",
-                        high = "#bd0026",
-                        space="Lab") +
-  scale_shape_manual(values = c(4, 16), breaks = c(TRUE,FALSE)) +
-  guides(shape = guide_legend(order = 1, 
-                              override.aes = list(size = 12))) + # change symbol size in the legend 
-  labs(shape = "Is Beta Cell") +
-  xlab("PC 1") + ylab("PC 2") +
-  theme(axis.text.x = element_text(face = "bold", #color = "#993333", 
-                                   size = 36), #angle = 45),
-        axis.text.y = element_text(face = "bold", #color = "blue", 
-                                   size = 36),#, angle = 45))
-        axis.title=element_text(size=44,face="bold"),
-        legend.text=element_text(size=28,face="bold"),
-        legend.title = element_text(size = 36,face="bold"),
-        panel.background = element_rect(colour = "black",size = 2))
-dev.off()
-
-# Higher expression levels of SST gene in delta cells
-jpeg(filename = "Image/Pancreas_SST_for_delta.jpeg",width = 800, height = 600,quality = 100)
-ggplot(marker_genes, aes(x=tSNE1, y=tSNE2, colour=SST,
-                         shape=(Celltype=="Delta"))) +
-  geom_point(size=3) + theme_classic() +
-  scale_color_gradient2(low = "#0571b0",
-                        midpoint = 0,
-                        mid = "#ffffcc",
-                        high = "#bd0026",
-                        space="Lab") +
-  scale_shape_manual(values = c(4, 16), breaks = c(TRUE,FALSE)) +
-  guides(shape = guide_legend(order = 1, 
-                              override.aes = list(size = 12))) + # change symbol size in the legend 
-  labs(shape = "Is Gamma Cell") +
-  xlab("PC 1") + ylab("PC 2") +
-  theme(axis.text.x = element_text(face = "bold", #color = "#993333", 
-                                   size = 36), #angle = 45),
-        axis.text.y = element_text(face = "bold", #color = "blue", 
-                                   size = 36),#, angle = 45))
-        axis.title=element_text(size=44,face="bold"),
-        legend.text=element_text(size=28,face="bold"),
-        legend.title = element_text(size = 36,face="bold"),
-        panel.background = element_rect(colour = "black",size = 2))
-dev.off()
-
-# Higher expression levels of PPY gene in gamma cells
-jpeg(filename = "Image/Pancreas_PPY_for_gamma.jpeg",width = 800, height = 600,quality = 100)
-ggplot(marker_genes, aes(x=tSNE1, y=tSNE2, colour=PPY,
-                         shape=(Celltype=="Gamma"))) +
-  geom_point(size=3) + theme_classic() +
-  scale_color_gradient2(low = "#0571b0",
-                        midpoint = 0,
-                        mid = "#ffffcc",
-                        high = "#bd0026",
-                        space="Lab") +
-  scale_shape_manual(values = c(4, 16), breaks = c(TRUE,FALSE)) +
-  guides(shape = guide_legend(order = 1, 
-                              override.aes = list(size = 12))) + # change symbol size in the legend 
-  labs(shape = "Is Delta Cell") +
-  xlab("PC 1") + ylab("PC 2") +
-  theme(axis.text.x = element_text(face = "bold", #color = "#993333", 
-                                   size = 36), #angle = 45),
-        axis.text.y = element_text(face = "bold", #color = "blue", 
-                                   size = 36),#, angle = 45))
-        axis.title=element_text(size=44,face="bold"),
-        legend.text=element_text(size=28,face="bold"),
-        legend.title = element_text(size = 36,face="bold"),
-        panel.background = element_rect(colour = "black",size = 2))
-dev.off()
-
-# Higher expression levels of PRSS1 gene in acinar cells
-jpeg(filename = "Image/Pancreas_PRSS1_for_acinar.jpeg",width = 800, height = 600,quality = 100)
-ggplot(marker_genes, aes(x=tSNE1, y=tSNE2, colour=PRSS1,
-                         shape=(Celltype=="Acinar"))) +
-  geom_point(size=3) + theme_classic() +
-  scale_color_gradient2(low = "#0571b0",
-                        midpoint = 0,
-                        mid = "#ffffcc",
-                        high = "#bd0026",
-                        space="Lab") +
-  scale_shape_manual(values = c(4, 16), breaks = c(TRUE,FALSE)) +
-  guides(shape = guide_legend(order = 1, 
-                              override.aes = list(size = 12))) + # change symbol size in the legend 
-  labs(shape = "Is Acinar Cell") +
-  xlab("PC 1") + ylab("PC 2") +
-  theme(axis.text.x = element_text(face = "bold", #color = "#993333", 
-                                   size = 36), #angle = 45),
-        axis.text.y = element_text(face = "bold", #color = "blue", 
-                                   size = 36),#, angle = 45))
-        axis.title=element_text(size=44,face="bold"),
-        legend.text=element_text(size=28,face="bold"),
-        legend.title = element_text(size = 36,face="bold"),
-        panel.background = element_rect(colour = "black",size = 2))
-dev.off()
-
-# Higher expression levels of KRT19 gene in ductal cells
-jpeg(filename = "Image/Pancreas_KRT19_for_ductal.jpeg",width = 800, height = 600,quality = 100)
-ggplot(marker_genes, aes(x=tSNE1, y=tSNE2, colour=KRT19,
-                         shape=(Celltype=="Ductal"))) +
-  geom_point(size=3) + theme_classic() +
-  scale_color_gradient2(low = "#0571b0",
-                        midpoint = 0,
-                        mid = "#ffffcc",
-                        high = "#bd0026",
-                        space="Lab") +
-  scale_shape_manual(values = c(4, 16), breaks = c(TRUE,FALSE)) +
-  guides(shape = guide_legend(order = 1, 
-                              override.aes = list(size = 12))) + # change symbol size in the legend 
-  labs(shape = "Is Ductal Cell") +
-  xlab("PC 1") + ylab("PC 2") +
-  theme(axis.text.x = element_text(face = "bold", #color = "#993333", 
-                                   size = 36), #angle = 45),
-        axis.text.y = element_text(face = "bold", #color = "blue", 
-                                   size = 36),#, angle = 45))
-        axis.title=element_text(size=44,face="bold"),
-        legend.text=element_text(size=28,face="bold"),
-        legend.title = element_text(size = 36,face="bold"),
-        panel.background = element_rect(colour = "black",size = 2))
-dev.off()
-
-##################################################
-# box plot of cell type effects vs batch effects #
-##################################################
-beta_nu_est <- cbind(beta.est,nu.est)
-colnames(beta_nu_est) <- c(paste0("Type ",1:K),paste0("Batch ",1:B))
-
-# exclude the first cell type and first batch
-beta_nu_est <- beta_nu_est[,-c(1,K+1)]
-
-beta_nu_est_frame <- melt(beta_nu_est)
-colnames(beta_nu_est_frame) <- c("Gene","Var","Value")
-
-jpeg(filename = "Image/pancreas_boxplot_of_beta_and_nu.jpg",width = 900, height = 600,quality = 100)
-ggplot(beta_nu_est_frame, aes(x = Var, y = Value, fill = Var)) + 
-  geom_boxplot() + theme_bw() +
-  geom_vline(xintercept = 7.5, linetype="dashed", size = 1) +
-  ylim(-5,5)+
-  scale_fill_manual(values = c(color_by_celltype_est[-1],color_by_batch[-1])) +
-  theme(axis.text.x = element_text(face = "bold", #color = "#993333", 
-                                   size = 36, angle = 90),
-        axis.text.y = element_text(face = "bold", #color = "blue", 
-                                   size = 36),#, angle = 45))
-        axis.title=element_text(size=44,face="bold"),
-        legend.position = "none",
-        axis.title.x=element_blank(),
-        panel.border = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),axis.line = element_line(colour = "black"),
-        panel.background = element_rect(colour = "black",size = 2))
-dev.off()
-
 
 # Store the workspace
 save(ARI_BUSseq,tsne_BUSseq_dist,file = "BUSseq_results.RData")
