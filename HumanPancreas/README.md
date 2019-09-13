@@ -4,7 +4,7 @@ This folder contains scripts that generate Figure 7 for the human pancreatic stu
 
 1. Run `BUSseq/run_BUSseq.sh` to apply BUSseq to the pancreatic dataset. 
    - conduct BUSseq and obtain the posterior sampling and inference (according to the BIC criterion, we select K = 8)
-   - write out the list of identified intrinsic genes
+   - write out the list of identified intrinsic genes and the corrected read count matrix into `x_corrected.txt`;
    - implement batch effect correction to obtain the corrected read count matrix;
    - calculate ARI between the estimated cell types by BUSseq and true cell type labels;
    - draw the t-SNE and PCA plots of BUSseq correction as well as the expression levels of marker genes on the t-SNE plot and save them in the folder `BUSseq/Image`;

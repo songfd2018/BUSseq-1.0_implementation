@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Conduct analysis by scanorama
+# Conduct analysis by Scanorama
 # Activate conda env
 source activate tensorflow_gpuenv
 # Python version 3.7.3
