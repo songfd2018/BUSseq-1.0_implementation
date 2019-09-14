@@ -6,8 +6,8 @@ source_url("https://raw.githubusercontent.com/obigriffith/biostar-tutorials/mast
 library(ggplot2)
 library(reshape2)
 
-# Working directory
 setwd("/your/working/directory/BUSseq_implementation-1.0/Simulation/")
+
 
 set.seed(12356)
 ################################
@@ -33,22 +33,23 @@ K<-5
 #The second column of gamma.syn denotes the odds ratios 
 #of the logistic regression for dropout events
 gamma.syn<-matrix(0,B,2)
-gamma.syn[1,]<-c(-0.5,-0.5)
+gamma.syn[1,]<-c(-0.5,-0.2)
 gamma.syn[2,]<-c(-0.5,-0.2)
-gamma.syn[3,]<-c(-1,-0.2)
-gamma.syn[4,]<-c(-1,-0.5)
+gamma.syn[3,]<-c(-0.5,-0.2)
+gamma.syn[4,]<-c(-0.5,-0.2)
 
 #the log-scale baseline expression levels
 alpha.syn<-rep(NA,G)
-alpha.syn[1:(G/4)]<-rep(1.2,G/4)
-alpha.syn[(G/4+1):(G/4*2)]<-rep(0.8,G/4)
-alpha.syn[(G/4*2+1):(G/4*3)]<-rep(0.4,G/4)
-alpha.syn[(G/4*3+1):G]<-rep(0,G/4)
+alpha.syn[1:(G/5)]<-rep(1.5,G/5)
+alpha.syn[(G/5+1):(G/5*2)]<-rep(1,G/5)
+alpha.syn[(G/5*2+1):(G/5*3)]<-rep(0.5,G/5)
+alpha.syn[(G/5*3+1):(G/5*4)]<-rep(0.25,G/5)
+alpha.syn[(G/5*4+1):G]<-rep(0,G/5)
 
-alpha.syn[1:45] <- 3.2
-alpha.syn[G/4 + 1:25] <- 2.8
-alpha.syn[G/4 * 2 + 1:25] <- 2.4
-alpha.syn[G/4 * 3 + 1:25] <- 2
+alpha.syn[1:50] <- 3.5
+alpha.syn[G/5 + 1:50] <- 3
+alpha.syn[G/5 * 2 + 1:25] <- 2.5
+alpha.syn[G/5 * 3 + 1:25] <- 2.25
 
 #the cell-type effects 
 beta.syn<-matrix(0,G,K)
@@ -58,50 +59,49 @@ beta.syn<-matrix(0,G,K)
 beta.syn[,1] <- 0
 
 #the cell-type effects of the second cell type
-beta.syn[1:45,2] <- -2
-beta.syn[46:70, 2] <- 2
-beta.syn[71:75, 2] <- 1.5
-beta.syn[G/4 + 1:25,2] <- -2
-beta.syn[G/4 + 26:50,2] <- 2
-beta.syn[G/4 + 51:65,2] <- 1.5
-beta.syn[G/4 * 2 + 1:25,2] <- -2
-beta.syn[G/4 * 2 + 26:50,2] <- 2
-beta.syn[G/4 * 3 + 1:25,2] <- -2
-beta.syn[G/4 * 3 + 26:50,2] <- 2
+beta.syn[1:25,2] <- -2
+beta.syn[26:50, 2] <- -1.5
+beta.syn[51:75, 2] <- 2
+beta.syn[G/5 + 1:25,2] <- -2
+beta.syn[G/5 + 26:50,2] <- -1.5
+beta.syn[G/5 + 51:75,2] <- 2 
+beta.syn[G/5 * 2 + 1:25,2] <- -2
+beta.syn[G/5 * 2 + 26:50,2] <- 2
+beta.syn[G/5 * 3 + 1:25,2] <- -2
+beta.syn[G/5 * 3 + 26:50,2] <- 2
 
 #the cell-type effects of the third cell type
-beta.syn[1:45,3] <- -2
-beta.syn[71:85, 3] <- 2
-beta.syn[86:95, 3] <- 1
-beta.syn[G/4 + 1:25,3] <- -2
-beta.syn[G/4 + 51:75,3] <- 2
-beta.syn[G/4 * 2 + 1:25,3] <- -2
-beta.syn[G/4 * 2 + 51:75,3] <- 2
-beta.syn[G/4 * 3 + 1:25,3] <- -2
-beta.syn[G/4 * 3 + 51:75,3] <- 2
+beta.syn[1:50,3] <- -2
+beta.syn[51:75, 3] <- 2
+beta.syn[G/5 + 1:50,3] <- -2
+beta.syn[G/5 + 51:75,3] <- 2 
+beta.syn[G/5 * 2 + 1:25,3] <- -2
+beta.syn[G/5 * 2 + 46:75,3] <- 2 
+beta.syn[G/5 * 3 + 1:25,3] <- -2
+beta.syn[G/5 * 3 + 46:75,3] <- 2 
 
 #the cell-type effects of the forth cell type
-beta.syn[1:45,4] <- -2
-beta.syn[76:100, 4] <- 2
-beta.syn[101:115, 4] <- 1
-beta.syn[G/4 + 1:25,4] <- -2
-beta.syn[G/4 + 76:100,4] <- 2
-beta.syn[G/4 * 2 + 1:25,4] <- -2
-beta.syn[G/4 * 2 + 76:100,4] <- 2
-beta.syn[G/4 * 3 + 1:25,4] <- -2
-beta.syn[G/4 * 3 + 76:100,4] <- 2
+beta.syn[1:50,4] <- -2
+beta.syn[76:95, 4] <- 2
+beta.syn[96:100, 4] <- 1
+beta.syn[G/5 + 1:50,4] <- -2
+beta.syn[G/5 + 76:100,4] <- 2 
+beta.syn[G/5 * 2 + 1:25,4] <- -2
+beta.syn[G/5 * 2 + 76:100,4] <- 2  
+beta.syn[G/5 * 3 + 1:25,4] <- -2
+beta.syn[G/5 * 3 + 76:100,4] <- 2
 
 #the cell-type effects of the fifth cell type
-beta.syn[1:25,5] <- -1
-beta.syn[26:45,5] <- -2
-beta.syn[101:125, 5] <- 2
-beta.syn[G/4 + 1:5,5] <- -1
-beta.syn[G/4 + 6:25,5] <- -2
-beta.syn[G/4 + 101:125,5] <- 2
-beta.syn[G/4 * 2 + 1:25,5] <- -2
-beta.syn[G/4 * 2 + 101:125,5] <- 2
-beta.syn[G/4 * 3 + 1:25,5] <- -2
-beta.syn[G/4 * 3 + 101:125,5] <- 2
+beta.syn[1:10,5] <- -1
+beta.syn[11:50,5] <- -2
+beta.syn[101:125, 5] <- 2 
+beta.syn[G/5 + 1:15,5] <- -1
+beta.syn[G/5 + 16:50,5] <- -2
+beta.syn[G/5 + 101:125,5] <- 2
+beta.syn[G/5 * 2 + 1:25,5] <- -2
+beta.syn[G/5 * 2 + 86:125,5] <- 2
+beta.syn[G/5 * 3 + 1:25,5] <- -2
+beta.syn[G/5 * 3 + 86:125,5] <- 2 
 
 # Check the values of alpha + beta
 plot(1:G, alpha.syn,col=1,ylim = c(-1,5))
@@ -118,13 +118,13 @@ nu.syn<-matrix(NA,G,B)
 nu.syn[,1] <- 0
 
 #the batch effect of the second batch
-nu.syn[,2] <- rep(c(4,0,1,1),each = G/4)
+nu.syn[,2] <- rep(c(4,3,2,1,0),each = G/5)
 
 #the batch effect of the third batch
-nu.syn[,3] <- rep(c(-1,0,-2,-1),each = G/4)
+nu.syn[,3] <- rep(c(2,1,0,1,2),each = G/5)
 
 #the batch effect of the forth batch
-nu.syn[,4] <- rep(c(-1,-2,-3,1),each = G/4)
+nu.syn[,4] <- rep(c(-1,-2,-3,-2,-1),each = G/5)
 
 #the cell-specific size factors
 delta.syn <- list()
@@ -136,29 +136,29 @@ for(b in 1:B){
 #the first cell in each batch is regarded as the reference cell 
 #with the cell-specific size factors being 0
 delta.syn[[1]][1:100] <- 0
-delta.syn[[1]][101:200] <- 0.3
-delta.syn[[1]][201:300] <- -0.3
+delta.syn[[1]][101:200] <- 1
+delta.syn[[1]][201:300] <- -1
 
 #the second batch
 delta.syn[[2]][1:50] <- 0
 delta.syn[[2]][51:70] <- -2
-delta.syn[[2]][71:100] <- 0.5
-delta.syn[[2]][101:300] <- -1.5
+delta.syn[[2]][71:100] <- -1
+delta.syn[[2]][101:300] <- -3
 
 #the third batch
 delta.syn[[3]][1:30] <- 0
-delta.syn[[3]][31:90] <- -1.5
+delta.syn[[3]][31:90] <- -2
 delta.syn[[3]][91:150] <- -1
-delta.syn[[3]][151:200] <- 0.5
+delta.syn[[3]][151:200] <- -3
 
 
 #the forth batch
 delta.syn[[4]][1:70] <- 0
-delta.syn[[4]][71:150] <- 0.5
-delta.syn[[4]][151:200] <- -1
+delta.syn[[4]][71:150] <- 1
+delta.syn[[4]][151:200] <- 2
 
 #the batch-specific and gene-specific overdispersion parameters
-phi.syn<-matrix(10,B,G)#mean 2 var 0.5
+phi.syn<-matrix(5,B,G)#mean 2 var 0.5
 phi.syn[,(G*0.4 + 1):(G * 0.8)]<-3
 phi.syn[,(G*0.8 + 1):G]<-1
 
@@ -196,6 +196,15 @@ w[[3]] <- rep(1:K, nb[3] * pi.syn[,3])
 #the forth batch
 w[[4]] <- rep(1:K, nb[4] * pi.syn[,4])
 
+# draw the experssion levels of i-th cell in b-th batch
+# cell_index <- 580
+# b <- 1
+# i <- cell_index
+# while(i > nb[b]){
+#   i <- i - nb[b]
+#   b <- b + 1
+# }
+# log_expression_level <- alpha.syn + beta.syn[,w[[b]][i]] + nu.syn[b,] + delta.syn[[b]][i]
 
 #the indicators for dropout events
 z<-list()
@@ -255,6 +264,9 @@ if(!dir.exists("RawCountData")){
   dir.create("RawCountData")
 }
 
+
+save.image("simulation_countdata_v1.RData")
+
 # Write out the read count matrix, dimsion information and metadata
 readcount <- do.call(cbind,y)
 write.table(readcount, file = "RawCountData/count_data_simulation_v1.txt",row.names = FALSE,col.names = FALSE)
@@ -298,9 +310,9 @@ color_key_nu <- c(colorsChoice_nu_low(6),colorsChoice_nu_high(6)[-1])
 colorsChoice_count <- colorRampPalette(c("#F2F2F2","black"))(11)
 
 # The splitting points for log-scale mean expression levels and batch effects
-break_mu <- seq(0, 3.5, length.out = 12)
+break_mu <- seq(-0.5, 4, length.out = 12)
 break_nu <- seq(-4.2, 4.2, length.out = 12)
-break_logcount <- seq(0,8.5,length.out = 12)
+break_logcount <- seq(0,9,length.out = 12)
 
 ######################
 # Plot the color key #
@@ -479,6 +491,3 @@ dev.off()
 for(b in 1:B){
   write.table(w[[b]],w.file,append = T, col.names = F, row.names = F)
 }
-
-# store the workspace
-save.image("simulation_countdata_v1.RData")
